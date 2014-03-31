@@ -14,12 +14,10 @@
 # OUTPUTS
 # 	- Local mirrored copy of KCNA news website
 #	- log with downloads strings that can be input to `kcna_queuer.py`
-#	- zip archive of KCNA mirror
 # 
 # REQUIREMENTS
 #	- wget
 #	- git
-#	- zip
 #	- nginx if doing development to run mirror from http://localhost
 # 
 # http://github.com/jfallisg
@@ -27,7 +25,9 @@
 #############################################################################
 
 script_timestamp=$(date +"%Y%m%d_%H%M%S")
-project_root=`pwd`
+script_root=$(pwd)
+[[ $script_root =~ (^.*nkir).*$ ]]
+project_root=${BASH_REMATCH[1]}
 
 ############
 # CONSTANTS & WGET OPTIONS
@@ -36,8 +36,8 @@ wget=/usr/local/bin/wget	# if on Mac OS, wget installed via Homebrew
 # wget=/ur/bin/wget			# uncomment/override above if on Linux
 
 mirrorpath=$project_root/data/collector_kcna/mirror
-logpath=$project_root/data/collector_kcna/logs
-sandboxpath=$project_root/sandbox_kcna/www.kcna.co.jp
+logpath=$project_root/var/logs
+test_mirror_path=$project_root/test/mirror_kcna/www.kcna.co.jp
 
 DIR_PREFIX="--directory-prefix=${mirrorpath}/www.kcna.co.jp"
 ROBOTS_OFF="--execute robots=off"
@@ -55,7 +55,7 @@ HTML_ONLY_DAILY="--reject mp3,gif"
 HTML_ONLY_FULL=""
 TIMESTAMPING="--timestamping"
 WAIT_DELAY_DEV=""
-WAIT_DELAY_PROD="--wait=0.1 --random-wait"
+WAIT_DELAY_PROD="--wait=0.001 --random-wait"
 #url=""						# see variable declarations
 URL_DEV="http://localhost/index-e.htm"
 URL_PROD="http://www.kcna.co.jp/index-e.htm"
@@ -72,7 +72,6 @@ LOG_FILE_NON_VERBOSE=""
 ############
 # VARIABLES
 ######
-mode_archive=0  # 0 == no archive mode
 mode_dev=0		# 0 == production mode
 mode_verbose=0	# 0 == quiet mode
 mode_mirror=""
@@ -93,30 +92,26 @@ log_file=""
 ######
 function print_usage {
 	echo "USAGE:" >&2
-	echo " ./mirror_kcna.sh [-dvz] daily|full" >&2
+	echo " ./mirror_kcna.sh [-dv] daily|full" >&2
 	echo "OPTIONAL FLAGS:" >&2
 	echo " -d for \"development\", mirror from dev server http://localhost instead of production server http://www.kcna.co.jp" >&2
 	echo " -v for \"verbose\", will log to console as well as to default ./<file>.log file" >&2
-	echo " -z for \"zip\", will create .zip archive of mirror" >&2
 	echo "REQUIRED ARG:" >&2
 	echo " daily | full" >&2
 	echo "  specify \"daily\" to update mirror with the latest articles." >&2
 	echo "  specify \"full\" to do a full site recursive mirror." >&2
 	echo "EXAMPLES:" >&2
 	echo " $ ./mirror_kcna.sh daily" >&2
-	echo " $ ./mirror_kcna.sh -dvz full" >&2
+	echo " $ ./mirror_kcna.sh -dv full" >&2
 }
 
-while getopts ":dvz" opt; do
+while getopts ":dv" opt; do
 	case $opt in
 		d)
 			mode_dev=1
 			;;
 	    v)
 			mode_verbose=1
-			;;
-		z)
-			mode_archive=1
 			;;
 		\?)
 			"Invalid option: -$OPTARG" >&2
@@ -134,7 +129,7 @@ else
 fi
 
 # if we are in dev mode, we need to make sure a kcna mirror is present, otherwise exit.
-if [[ "$mode_dev" == "1" ]] && [[ ! -d "$sandboxpath" ]]; then
+if [[ "$mode_dev" == "1" ]] && [[ ! -d "$test_mirror_path" ]]; then
 	echo "ERROR: dev mode specified but you need a sandbox copy of the KCNA mirror.  Try \"make sandbox\"" >&2
 	exit 2
 fi
@@ -158,9 +153,6 @@ if [[ "$mode_dev" == 1 ]]; then
 fi
 if [[ "$mode_verbose" == 1 ]]; then
 	printf "verbose-mode, "
-fi
-if [[ "$mode_archive" == 1 ]]; then
-	printf "archive-mode, "
 fi
 if [[ -n "$mode_mirror" ]]; then
 	printf "mirror-mode: $mode_mirror.\n"
@@ -243,20 +235,6 @@ git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} commit --status -m "increm
 git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} log --name-status --pretty=format: -1 >> $logpath/git_${script_timestamp}.log
 
 ############
-
-############
-# if -z, zip up archive
-######
-if [[ "$mode_archive" == 1 ]]; then
-	echo "archiving..."
-	if [[ ! -d "${mirrorpath}/archives" ]]; then
-		mkdir -v "${mirrorpath}/archives"
-	fi
-	zip -qr ${mirrorpath}/archives/www.kcna.co.jp_archive_${script_timestamp}.zip ${mirrorpath}/www.kcna.co.jp -x "*.DS_Store"
-	if [[ $? > 0 ]]; then
-		echo "WARNING, zip had error code $?"
-	fi
-fi
 
 echo "mirror_kcna.sh complete"
 
