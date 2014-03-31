@@ -6,7 +6,9 @@
 
 ## Requirements
 
-- wget (installed with Homebrew if on Mac OS)
+- xcode command line tools (if on Mac OS)
+- Homebrew (if on mac OS)
+- wget
 - git
 - nginx (if doing development to run a local mirror)
 
