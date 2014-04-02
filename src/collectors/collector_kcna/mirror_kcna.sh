@@ -37,6 +37,7 @@ wget=/usr/local/bin/wget	# if on Mac OS, wget installed via Homebrew
 
 mirrorpath=$project_root/data/collector_kcna/mirror
 logpath=$project_root/var/logs
+queue_inbox_path=$project_root/data/collector_kcna/inbox_queuer
 test_mirror_path=$project_root/test/mirror_kcna/www.kcna.co.jp
 
 DIR_PREFIX="--directory-prefix=${mirrorpath}/www.kcna.co.jp"
@@ -233,6 +234,23 @@ fi
 git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} add .
 git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} commit --status -m "incremental update ${script_timestamp}" > $logpath/git_${script_timestamp}.log
 git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} log --name-status --pretty=format: -1 >> $logpath/git_${script_timestamp}.log
+
+############
+
+############
+# copy git logs if they exist to inbox_queuer
+######
+echo "RIGHT HERE!"
+echo "$logpath/git_${script_timestamp}.log"
+echo "$queue_inbox_path"
+echo "$queue_inbox_path/git_${script_timestamp}.log"
+if [[ -f $logpath/git_${script_timestamp}.log ]]; then
+	echo "up in here!"
+	if [[ ! -d "$queue_inbox_path" ]]; then
+		mkdir -p $queue_inbox_path
+	fi
+	cp $logpath/git_${script_timestamp}.log $queue_inbox_path/git_${script_timestamp}.log
+fi
 
 ############
 
