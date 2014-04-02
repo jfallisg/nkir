@@ -69,6 +69,7 @@ test: dev_mirror_kcna
 collector_kcna: seed_kcna_mirror
 	mkdir -p data/collector_kcna/inbox_db
 	mkdir -p data/collector_kcna/inbox_json
+	mkdir -p data/collector_kcna/inbox_queuer
 
 kcna_mirror:
 	./src/collectors/collector_kcna/mirror_kcna.sh daily
