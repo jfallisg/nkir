@@ -3,3 +3,4 @@ env/
 srv/
 test/
 var/
+_ipython/
