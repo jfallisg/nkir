@@ -3,14 +3,6 @@
 """Scrapes HTML articles from http://www.kcna.co.jp/ for relevant text, outputting as JSON for database import."""
 
 # TODOs:
-# Clean up code
-    # pythonic
-    # comments
-    # variable, function names
-    # import just what's needed
-    # better logging functions
-# Throw exceptions, handle more edge cases
-# Check for spanish language articles and not process them
 # Multiple rules defined by year, with function to choose the correct rule
 # Process real data
 # Confirm you can run just the HTML->JSON function on it's own from cmd ln
@@ -18,6 +10,7 @@
 # deploy to server with automation
 # refactor to a single definition of all rules self contained, possibly
 #   with inheritance from an abstract base class
+# refactor to be more pythonic
 
 import datetime
 import logging
@@ -28,6 +21,7 @@ import shutil
 import sys
 
 from bs4 import BeautifulSoup
+import requests
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
 PROJECT_ROOT_REGEX = re.search("^(.*/nkir).*$", SCRIPT_ROOT)
@@ -37,6 +31,7 @@ LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/jsonifier_kcna_'+TIME_START
 INBOX_JSON_ROOT = os.path.join(PROJECT_ROOT, 'data/collector_kcna/inbox_json')
 INBOX_JSON_ARCHIVE = os.path.join(INBOX_JSON_ROOT, 'archive')
 INBOX_DB_ROOT = os.path.join(PROJECT_ROOT,'data/collector_kcna/inbox_db')
+GOOGLE_API_KEY = os.path.join(PROJECT_ROOT,'.google_api.key')
 
 def _get_logger():
     # init the root logger (which logs to persistent local logfile)
@@ -92,6 +87,37 @@ def _get_link_url(html_filename):
     link_url = "/".join(URL_FORMAT)
     return link_url
 
+def checkEnglish(sentance):
+    DETECT_URL = 'https://www.googleapis.com/language/translate/v2/detect?'
+    logger = logging.getLogger('')
+    api_key = ''
+    verdict = ''
+
+    try:
+        fd = open(GOOGLE_API_KEY, "r")
+    except IOError as e:
+        logger.warning("I/O error: {} when attempting open [{}].".format(e.strerror, GOOGLE_API_KEY))
+
+    firstline = fd.readline().strip()
+    try:
+        api_key = (re.match(r"""^(?!#)(.*)$""",(firstline))).group()
+    except AttributeError as e:
+        logger.warning("api_key appears to be commented out!.".format(e, firstline))
+    else:
+        logger.debug("API KEY: [{}]".format(api_key))
+
+    # Google Translate API get request
+    dict_input = {'key': api_key, 'q': sentance}
+    google_data = (requests.get(DETECT_URL, params=dict_input)).json()
+
+    if 'data' in google_data:
+        if google_data['data']['detections'][0][0]['language'] == 'en':
+            verdict = 'en'
+        elif google_data['data']['detections'][0][0]['language'] == 'es':
+            verdict = 'es'
+
+    return verdict
+
 def html_to_json(html_file_path):
     logger = logging.getLogger('')
     logger.debug("Processing: {}".format(html_file_path))    
@@ -115,7 +141,7 @@ def html_to_json(html_file_path):
     try:
         (date, juche_year, article) = parsed.groups()
     except AttributeError as e:
-        logger.warning("I/O error: {} when attempting regex search on [{}].".format(e, html_file_path))
+        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, html_file_path))
         return False
 
     article_text = []
@@ -124,10 +150,33 @@ def html_to_json(html_file_path):
         if line:
             article_text.append(line)
 
-    # process metadata
     data = {}
     data['metadata'] = {}
 
+    # check language is english
+    data['metadata']['title'] = article_text.pop(0)
+
+    verdict = checkEnglish(data['metadata']['title'])
+    if verdict == 'en':
+        logger.debug("article [{}] is in english.".format(html_file_path))
+    elif verdict == 'es':
+        logger.debug("article [{}] was in spanish -> not going to process.".format(html_file_path))
+        inbox_json_archive_spanish = os.path.join(INBOX_JSON_ARCHIVE,'spanish')
+        if( not os.path.exists(inbox_json_archive_spanish) ):
+            os.makedirs(inbox_json_archive_spanish)
+        html_file_archive_path = os.path.join(inbox_json_archive_spanish,os.path.basename(html_file_path))
+        try:
+            shutil.move(html_file_path, html_file_archive_path)
+        except IOError as e:
+            logger.warning("I/O error: {} when attempting move [{}] to [{}]".format(e.strerror, html_file_path, html_file_archive_path))
+        else:
+            logger.debug("Moved spanish article {} to JSONIFIER_INBOX's spanish (unprocessed) archive.".format(html_file_path))
+        return False
+    else:
+        logger.debug("Unable to deduce language of article [{}].".format(html_file_path))
+        return False
+
+    # process metadata
     data['metadata']['date_published'] = _pp_date(date)
 
     data['metadata']['juche_year'] = int(juche_year)
@@ -137,8 +186,6 @@ def html_to_json(html_file_path):
 
     datetime_modified = datetime.datetime.fromtimestamp(os.path.getmtime(html_file_path))
     data['metadata']['html_modified'] = datetime_modified.__str__()
-
-    data['metadata']['title'] = article_text.pop(0)
 
     # process article's text data
     data['text'] = []

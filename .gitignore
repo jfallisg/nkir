@@ -4,3 +4,4 @@ srv/
 test/
 var/
 _ipython/
+.google_api.key
