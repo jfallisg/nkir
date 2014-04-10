@@ -93,7 +93,8 @@ def _get_link_url(html_filename):
     return link_url
 
 def html_to_json(html_file_path):
-    success = 1
+    logger = logging.getLogger('')
+    logger.debug("Processing: {}".format(html_file_path))    
 
     # initialize for every article
     payload = {
@@ -111,7 +112,11 @@ def html_to_json(html_file_path):
     re_parse = re.compile(ur"^.*>> (.* \d\d\d\d) Juche ([0-9]+)(.*)$",
                    re.DOTALL | re.UNICODE)
     parsed = re_parse.search(html_text)
-    (date, juche_year, article) = parsed.groups()
+    try:
+        (date, juche_year, article) = parsed.groups()
+    except AttributeError as e:
+        logger.warning("I/O error: {} when attempting regex search on [{}].".format(e, html_file_path))
+        return False
 
     article_text = []
     for line in article.splitlines():
@@ -153,7 +158,7 @@ def html_to_json(html_file_path):
     with open(new_filepath, 'w') as outfile:
         json.dump(payload, outfile, sort_keys=True)
 
-    return success
+    return True
 
 def main():
     logger = _get_logger()
@@ -166,7 +171,7 @@ def main():
 
      # Look inside INBOX_JSON_ROOT for queueud HTML files
     inbox_json_root_contents = os.listdir(INBOX_JSON_ROOT)
-    html_filenames = filter(lambda x:re.search(r'.html', x), inbox_json_root_contents)
+    html_filenames = filter(lambda x:re.search(r'.htm', x), inbox_json_root_contents)
 
     total_articles = 0
     processed_articles = 0
@@ -178,6 +183,7 @@ def main():
         # archive html file if we processed ok
         if json_processer_return:
             processed_articles += 1
+            logger.info("Successfully processed {} in to JSON.".format(html_filename))
             if( not os.path.exists(INBOX_JSON_ARCHIVE) ):
                 os.makedirs(INBOX_JSON_ARCHIVE)
             
@@ -190,6 +196,10 @@ def main():
                 logger.debug("Moved {} to JSONIFIER_INBOX's archive.".format(html_file_path))
         else:
             logger.warning("html_to_json error: {} was not successfully processed from HTML -> JSON.".format(html_file_path))
+
+    logger.info("Processed {} HTML articles out of {} from HTML to JSON.".format(processed_articles, total_articles))
+    TIME_END = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    logger.info("{} finished at {}.".format(os.path.basename(__file__),TIME_END))
 
     return(0)
 
