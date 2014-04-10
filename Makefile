@@ -69,6 +69,9 @@ test: dev_mirror_kcna
 queue:
 	python src/collectors/collector_kcna/queuer_kcna.py
 
+json:
+	python src/collectors/collector_kcna/jsonifier_kcna.py
+
 collector_kcna: seed_kcna_mirror
 	mkdir -p data/collector_kcna/inbox_db
 	mkdir -p data/collector_kcna/inbox_json
