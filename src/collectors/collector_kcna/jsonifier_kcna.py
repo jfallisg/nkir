@@ -57,25 +57,34 @@ def _pp_date(date):
     return dt.__str__()
 
 def _pp_article(data):
+    logger = logging.getLogger('')
     article = data['text']
     
     # slice up first paragraph
     fp = article[0]
     regex = re.search("^(.*),.*\((.*)\) -- (.*)$",fp)
-    (data['metadata']['location'],
-     data['metadata']['news_service'],
-     article[0]) = regex.groups()
-    
+
+    try:
+		(data['metadata']['location'],
+		 data['metadata']['news_service'],
+		 article[0]) = regex.groups()
+    except AttributeError as e:
+        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, fp))
+
     # chop off copyright line of article
     article.pop()
     data['text'] = article
     return data
 
 def _get_link_url(html_filename):
+    logger = logging.getLogger('')
     KCNA_URL_ROOT = 'http://www.kcna.co.jp'
 
     reg = re.search("^(\d\d\d\d)(\d\d)(\d\d).*$", html_filename)
-    (year, month, day) = reg.groups()
+    try:
+    	(year, month, day) = reg.groups()
+    except AttributeError as e:
+        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, html_filename))
     
     URL_FORMAT = [KCNA_URL_ROOT,
                   'item',
