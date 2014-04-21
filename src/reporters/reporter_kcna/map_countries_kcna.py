@@ -11,7 +11,6 @@ import sys
 from pymongo import MongoClient
 
 # TODOs
-# BUG in url column of output
 # Names of many countries are weird, need a synanyms directory!
 # Refactor common functionality (logging, setup, teardown, etc) to library
 # Singleton of MongoDB connection instead of new connection each country
@@ -119,9 +118,11 @@ def _get_output_line(article):
     
     _output_line = ",".join([   article["searchterm"],
                                 article["published"],
-                                article["title"],
+                                "\"{}\"".format(article["title"]),
                                 article["url"],
                             ])
+
+    print("\n=== OUTPUT_LINE: [{}]\n".format(_output_line))
 
     return _output_line
 
