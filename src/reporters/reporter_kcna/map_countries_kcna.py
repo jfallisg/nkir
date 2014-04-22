@@ -11,7 +11,7 @@ import sys
 from pymongo import MongoClient
 
 # TODOs
-# Names of many countries are weird, need a synanyms directory!
+# Sort article lists before processing for better readability
 # Refactor common functionality (logging, setup, teardown, etc) to library
 # Singleton of MongoDB connection instead of new connection each country
 
@@ -22,6 +22,7 @@ TIME_START = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/map_countries_kcna_'+TIME_START+'.log')
 OUTPUT_ROOT = os.path.join(PROJECT_ROOT, 'data/reporter_kcna/output_map_countries_kcna')
 
+# instantiate a logging object singleton for use throughout script
 def _get_logger():
     # init the root logger (which logs to persistent local logfile)
     logging.basicConfig(filename=LOG_FILE_PATH,
@@ -40,31 +41,42 @@ def _get_logger():
     _root_logger.addHandler(_console_logger)
     return _root_logger
 
+# _get_countries returns a dict of lists with each entry looking like:
+#  {ISO 3166-1 alpha-2 code : [ISO 3166 Country Name, Alias1, Alias2],
+#   next country alpha-2    : [ISO 3166 Country name, Alias1],
+#   etc
+#  }
 def _get_countries():
+    _country_map = {}
 
-    # constants
     _COUNTRIES_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/datasets/countries.txt')
 
     logger = logging.getLogger('')
-
-    _countries = []
 
     # make sure we have the list of countries file
     if os.path.isfile(_COUNTRIES_FILE_PATH):
         with open(_COUNTRIES_FILE_PATH, 'r') as f:
             for line in f:
                 # parse line which looks like:
-                # "BE|Belgium\n"
-                _countries.append(line.split("|")[1].rstrip('\n'))
+                # "NL|Netherlands;Holland\n"
+                _country_code, _country_text = line.split("|")
+                _country_map[_country_code] = []
+                _alias_list = _country_text.rstrip("\n").split(";")
+                for _alias in _alias_list:
+                    _country_map[_country_code].append(_alias)
             logger.info("Retrieved list of countries.")
     else:
         logger.error("Countries list file {} wasn't available; exiting.".format(_COUNTRIES_FILE_PATH))
         # can't run if we don't have a list of countries, so exit program
         sys.exit(1)
 
-    return _countries
+    return _country_map
 
-def _get_articles(country):
+# _get_articles returns a list of articles (with each article being a 
+#  PyMongo document from the aggregate function on a MongoDB collection
+#  in Python dict form).
+def _get_articles(country_code, alias_list):
+    _articles = []
 
     # constants
     _DB_HOST = 'localhost'
@@ -74,62 +86,79 @@ def _get_articles(country):
 
     logger = logging.getLogger('')
 
-    _articles = []
+    logger.info("Looking for country \"{}\".".format(alias_list[0]))
 
-    # connect to MongoDB
-    _client = MongoClient(_DB_HOST, _DB_PORT)
-    _db = _client[_DB_NAME]
-    _coll = _db[_COLLECTION_NAME]
+    # NOTE:
+    # We want to return all relevant docs for a given country, no matter 
+    #  which alias is used to find that article, but without duplicating 
+    #  articles.
+    # Ideally this would entail a text search that OR's all the aliases for a
+    #  given country.
+    # BUT, MongoDB currently has a text search limitation where if one of 
+    #  search terms is a phrase in double quotes, like "\"North Korea\"", 
+    #  this phrase will be ANDed with the rest of your search terms.
+    # So you can't run a search like:  "United States" || "US" || "USA"
+    #  as MongoDB will instead search: "United States" && ("US" || "USA")
+    # As a result, we run seperate queries for each alias and append our 
+    #  found docs by url to a temp dict before returning our final _articles 
+    #  list for the given country parameter.
+    _temp_article_dict = {}
+    for alias in alias_list:
+        # connect to MongoDB
+        _client = MongoClient(_DB_HOST, _DB_PORT)
+        _db = _client[_DB_NAME]
+        _coll = _db[_COLLECTION_NAME]
 
-    # query for data
-    _PIPELINE = [
-        { "$match":   { "$text":      { "$search": '"{}"'.format(country) } } },
-        { "$sort":    { "textScore":  { "$meta": "textScore"  } } },
-        { "$project": {"_id": 0,
-                        "published":  "$data.metadata.date_published",
-                        "modified":   "$data.metadata.html_modified",
-                        "title":      "$data.metadata.title",
-                        "location":   "$data.metadata.location",
-                        "url":        "$data.metadata.article_url",
-                        "textScore":  { "$meta": "textScore" },
-                        "searchterm": { "$literal": '"{}"'.format(country) },
-                        "textbody":   "$data.text",
-        }}
-    ]
+        # query for data
+        _PIPELINE = [
+            { "$match":   { "$text":      { "$search": '"{}"'.format(alias) } } },
+            { "$sort":    { "textScore":  { "$meta": "textScore"  } } },
+            { "$project": {"_id": 0,
+                            "published":  "$data.metadata.date_published",
+                            "modified":   "$data.metadata.html_modified",
+                            "title":      "$data.metadata.title",
+                            "location":   "$data.metadata.location",
+                            "url":        "$data.metadata.article_url",
+                            "textScore":  { "$meta": "textScore" },
+                            "country":    { "$literal": '"{}"'.format(country_code) },
+                            "searchterm": { "$literal": '"{}"'.format(alias) },
+                            "textbody":   "$data.text",
+            }}
+        ]
 
-    logger.info("Querying MongoDB for mentions of \"{}\"...".format(country))
+        logger.info("Querying MongoDB for mentions of \"{}\"...".format(alias))
 
-    # execute query
-    _cursor = _coll.aggregate(_PIPELINE, cursor={})
+        # execute query
+        _cursor = _coll.aggregate(_PIPELINE, cursor={})
 
-    # build return list or dicts
-    for _doc in _cursor:
-        _articles.append(_doc)
+        # push return to _temp_article_dict with KEY on url.
+        # duplicate articles as we loop through aliases won't appear
+        for _doc in _cursor:
+            _temp_article_dict[_doc["url"]] = _doc
+
+    # build return list of article/doc dictionaries
+    for _url in _temp_article_dict:
+        _articles.append(_temp_article_dict[_url])
 
     # throw message if queried list is empty
     if len(_articles) == 0:
-        logger.info("No results found for \"{}\".".format(country))
+        logger.info("No results found for \"{}\".".format(alias_list[0]))
     else:
         logger.info("{} results found.".format(len(_articles)))
 
     return _articles
 
+# _get_output_line returns an output csv string for each article dictionary
 def _get_output_line(article):
-    
-    _output_line = ",".join([   article["searchterm"],
+    _output_line = ",".join([   article["country"],
                                 article["published"],
                                 "\"{}\"".format(article["title"]),
                                 article["url"],
                             ])
-
-    print("\n=== OUTPUT_LINE: [{}]\n".format(_output_line))
-
     return _output_line
 
+# _output_csv prints out output csv file
 def _output_csv(data):
-
-    logger = logging.getLogger('')
-
     if( not os.path.exists(OUTPUT_ROOT) ):
         os.makedirs(OUTPUT_ROOT)
 
@@ -140,7 +169,7 @@ def _output_csv(data):
             f.write(line)
             f.write("\n")
 
-    return 1
+    return(0)
 
 def main():
     logger = _get_logger()
@@ -150,6 +179,7 @@ def main():
     logger.debug("LOG_FILE_PATH {}".format(LOG_FILE_PATH))
     logger.debug("OUTPUT_ROOT {}".format(OUTPUT_ROOT))
 
+    # seed data's header csv string line
     data = ["country," +
             "published," +
             "title,"+
@@ -157,8 +187,8 @@ def main():
 
     countries = _get_countries()
 
-    for country in countries:
-        articles = _get_articles(country)
+    for country_code, alias_list in countries.iteritems():
+        articles = _get_articles(country_code, alias_list)
     
         for article in articles:
             output_line = _get_output_line(article)
