@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>North Korean state media mentions of other nations over time</title>
+    <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.7/crossfilter.min.js"></script>
+    <script type="text/javascript" src="http://d3js.org/colorbrewer.v1.min.js"></script>
+    <script type="text/javascript" src="http://d3js.org/queue.v1.min.js"></script>
+    <!--<script type="text/javascript" src="js/d3.min.js"></script>-->
+    <!--<script type="text/javascript" src="js/crossfilter.min.js"></script>-->
+    <!--<script type="text/javascript" src="js/colorbrewer.js"></script>-->
+    <!--<script type="text/javascript" src="js/queue.min.js"></script> -->
+    <link href="nk_mention_bars.css" rel="stylesheet">
+    <style>
+      .grid-background {
+        fill: none;
+      }
+
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+      }
+
+      .axis text {
+        font-family: sans-serif;
+        font-size: 11px;
+      }
+
+      .brush .extent {
+        stroke: #fff;
+        fill-opacity: .125;
+        shape-rendering: crispEdges;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="charts">
+      <div class="chart-container" id="date-chart-container">
+        <div class="title">Date published VS article count</div>
+      </div>
+      <div class="chart-container" id="country-chart-container">
+        <div class="title">Country mentions VS article count in date slice</div>
+      </div>
+    </div>
+    <script type="text/javascript" src="nk_mention_bars.js"></script>
+  </body>
+</html>
