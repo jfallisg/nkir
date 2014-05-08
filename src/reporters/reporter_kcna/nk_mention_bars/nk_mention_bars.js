@@ -154,12 +154,15 @@ function initialize() {
     .extent([new Date(2014, 2, 2), new Date(2014, 2, 9)])
     .on("brush", brushed);
 
-  dateBarChart.gHandle.append("g")
-       .attr("class", "brush")
-       .call(brush)
-    .selectAll("rect")
-       .attr("y", -6)
-       .attr("height", height + 7);
+  var gBrush = dateBarChart.gHandle.append("g")
+    .attr("class", "brush")
+    .call(brush);
+  gBrush.selectAll("rect")
+    .attr("y", -6)
+    .attr("height", height + 7);
+  gBrush.selectAll(".resize")
+    .append("path")
+    .attr("d", resizePath);
 
   // apply brushes' default extent
   filter.byDate.filterRange(brush.extent());
@@ -187,6 +190,9 @@ function reDraw() {
   dateBarChart.gHandle.select("#date-bars")
     .selectAll("rect")
       .data(filter.groupByDate.all())
+      .attr("fill", function(d) {
+        return (brush.extent()[0] < d.key && d.key < brush.extent()[1] ? dateBarChart.scaleColor(d.value) : "#E3E3E3");
+      })
     .transition().duration(transitionDuration)
       .attr("x", function(d, i) {
         return (dateBarChart.scaleX(d.key) - (dateBarWidth/2));
@@ -197,9 +203,6 @@ function reDraw() {
       .attr("width", dateBarWidth)
       .attr("height", function(d) {
         return (height - dateBarChart.scaleY(d.value));
-      })
-      .attr("fill", function(d) {
-        return dateBarChart.scaleColor(d.value);
       });
 
   dateBarChart.gHandle.select("#date-axis").transition().duration(transitionDuration).call(dateBarChart.axisX);
@@ -271,4 +274,20 @@ function getDateBuffer() {
   dateMaxBuffer.setDate(dateMaxBuffer.getDate() + maxBuffer);
 
   return [dateMinBuffer, dateMaxBuffer];
+}
+
+// brush handles cribbed from [http://square.github.io/crossfilter/]
+function resizePath(d) {
+  var e = +(d == "e"),
+      x = e ? 1 : -1,
+      y = height / 3;
+  return "M" + (.5 * x) + "," + y
+      + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6)
+      + "V" + (2 * y - 6)
+      + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y)
+      + "Z"
+      + "M" + (2.5 * x) + "," + (y + 8)
+      + "V" + (2 * y - 8)
+      + "M" + (4.5 * x) + "," + (y + 8)
+      + "V" + (2 * y - 8);
 }
