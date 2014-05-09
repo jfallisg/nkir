@@ -25,3 +25,15 @@
   fill: #eee;
   stroke: #666;
 }
+
+.country-poly {
+  stroke: #fff;
+}
+
+#USA {
+  fill: blue;
+}
+
+#PRK {
+  fill: red;
+}

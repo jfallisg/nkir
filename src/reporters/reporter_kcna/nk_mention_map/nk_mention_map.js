@@ -162,9 +162,13 @@ function initialize() {
     .attr("id", "country-map")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  countryMap.gHandle.append("path")
-    .datum(countryMap.data)
-    .attr("d", countryMap.path);
+  countryMap.gHandle.selectAll(".country-poly")
+      .data(countryMap.data.features)
+    .enter()
+      .append("path")
+      .attr("class", "country-poly")
+      .attr("id", function(d) { return d.properties.adm0_a3 })
+      .attr("d", countryMap.path);
 
   // draw Background Rect For Brush
   dateBarChart.gHandle.append("rect")
