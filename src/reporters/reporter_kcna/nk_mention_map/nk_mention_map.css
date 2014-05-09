@@ -29,3 +29,10 @@
 .country-poly {
   stroke: #fff;
 }
+
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .4px;
+  stroke-opacity: .2;
+}

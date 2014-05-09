@@ -55,7 +55,7 @@ function initialize() {
   // variable declarations
 
   // DATE BAR CHART
-  dateBarChart.height = 250 - margin.top - margin.bottom;
+  dateBarChart.height = 200 - margin.top - margin.bottom;
 
   dateBarChart.scaleX = d3.time.scale()
     .domain(getDateBuffer())
@@ -80,12 +80,18 @@ function initialize() {
   countryMap.scaleColor = d3.scale.linear()
     .range(colorbrewer.OrRd[5]);
 
-  countryMap.projection = d3.geo.mercator()
-    .scale(150)
-    .translate([width / 2, countryMap.height / 2]);
+  countryMap.projection = d3.geo.stereographic()
+    .scale(160)
+    .translate([width / 2, countryMap.height / 2])
+    .rotate([-126, -40])
+    .clipAngle(180 - 1e-4)
+    .clipExtent([[0, 0], [width, countryMap.height]])
+    .precision(.1);
 
   countryMap.path = d3.geo.path()
     .projection(countryMap.projection);
+
+  countryMap.graticule = d3.geo.graticule();
 
   // insert stuff on the DOM
 
@@ -137,6 +143,11 @@ function initialize() {
       .attr("class", "country-poly")
       .attr("id", function(d) { return d.properties.adm0_a3 })
       .attr("d", countryMap.path);
+
+  countryMap.gHandle.append("path")
+    .datum(countryMap.graticule)
+    .attr("class", "graticule")
+    .attr("d", countryMap.path);
 
   // draw Background Rect For Brush
   dateBarChart.gHandle.append("rect")
@@ -206,6 +217,17 @@ function reDraw() {
   countryMap.gHandle.selectAll(".country-poly")
     .transition().duration(transitionDuration)
       .attr("fill", function(d) { return getCountryValue(d.properties.adm0_a3) });
+
+  // TODO: Remove, temporary to rotate North Korea correctly
+  countryMap.gHandle.append("path")
+    .attr("id", "guidelines")
+    .attr("d", "M0," + (countryMap.height / 2)
+      + "H" + width
+      + "M" + (width / 2) + ",0"
+      + "V" + (countryMap.height) )
+    .attr("stroke", "blue")
+    .attr("stroke-width", 1)
+    .attr("fill", "none");
 }
 
 // Snapping behavior from http://bl.ocks.org/mbostock/6232620
