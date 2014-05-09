@@ -179,7 +179,6 @@ function initialize() {
   // draw brush
   brush = d3.svg.brush()
     .x(dateBarChart.scaleX)
-    //.extent([new Date(2014, 2, 2), new Date(2014, 2, 9)])
     .extent(getBrushDefaultExtent())
     .on("brush", brushed);
 
@@ -258,6 +257,10 @@ function reDraw() {
 
   countryBarChart.gHandle.select("#country-axis").transition().duration(transitionDuration).call(countryBarChart.axisX);
   countryBarChart.gHandle.select("#country-count-axis").transition().duration(transitionDuration).call(countryBarChart.axisY);
+
+  countryMap.gHandle.selectAll(".country-poly")
+    .transition().duration(transitionDuration)
+      .attr("fill", function(d) { return getCountryValue(d.properties.adm0_a3) });
 }
 
 // Snapping behavior from http://bl.ocks.org/mbostock/6232620
@@ -328,4 +331,19 @@ function resizePath(d) {
       + "V" + (2 * y - 8)
       + "M" + (4.5 * x) + "," + (y + 8)
       + "V" + (2 * y - 8);
+}
+
+function getCountryValue(countryAlpha3) {
+
+  var countryValue = 0;
+
+  try {
+    countryValue = filter.groupByCountry.all().filter(function(d) {
+      return d.key == countryAlpha3;
+    })[0].value;
+  } catch(err) {
+    countryValue = 0;
+  }
+
+  return countryBarChart.scaleColor(countryValue);
 }
