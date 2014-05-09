@@ -13,14 +13,16 @@ var filter = {};
 var brush = {};
 var dateBarChart = {};
 var countryBarChart = {};
+var countryMap = {};
 
 // queue all data file loading before proceeding further
 queue()
   .defer(d3.csv, "data/kcna.csv")
+  .defer(d3.json, "data/topo_countries.json")
   .await(ready);
 
 // runs after all dependencies have downloaded
-function ready(error, data) {
+function ready(error, data, countries) {
   if (error) return console.error(error);
 
   // csv's load without type, so make date objects from dates and add indexes
@@ -32,6 +34,9 @@ function ready(error, data) {
   dateBarChart.dateDomain = d3.extent(data, function(d) { return d.date });
 
   buildCrossfilter(data, filter);
+
+  // convert TopoJSON to plotable GeoJSON
+  countryMap.data = topojson.feature(countries, countries.objects.countries);
 
   initialize();
 
@@ -87,6 +92,14 @@ function initialize() {
     .ticks(9)
     .tickFormat(d3.format("d"));
 
+  // COUNTRY MAP
+  countryMap.projection = d3.geo.mercator()
+    .scale(150)
+    .translate([width / 2, height / 2]);
+
+  countryMap.path = d3.geo.path()
+    .projection(countryMap.projection);
+
   // insert stuff on the DOM
 
   d3.selectAll("#charts .chart-container")
@@ -141,6 +154,17 @@ function initialize() {
   countryBarChart.gHandle.append("g")
     .attr("class", "axis")
     .attr("id", "country-count-axis");
+
+  // COUNTRY MAP
+  countryMap.gHandle = d3.select("#country-map-container svg")
+    .append("g")
+    .attr("class", "map")
+    .attr("id", "country-map")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  countryMap.gHandle.append("path")
+    .datum(countryMap.data)
+    .attr("d", countryMap.path);
 
   // draw Background Rect For Brush
   dateBarChart.gHandle.append("rect")
