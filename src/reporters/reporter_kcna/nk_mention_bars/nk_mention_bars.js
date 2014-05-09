@@ -151,7 +151,8 @@ function initialize() {
   // draw brush
   brush = d3.svg.brush()
     .x(dateBarChart.scaleX)
-    .extent([new Date(2014, 2, 2), new Date(2014, 2, 9)])
+    //.extent([new Date(2014, 2, 2), new Date(2014, 2, 9)])
+    .extent(getBrushDefaultExtent())
     .on("brush", brushed);
 
   var gBrush = dateBarChart.gHandle.append("g")
@@ -274,6 +275,15 @@ function getDateBuffer() {
   dateMaxBuffer.setDate(dateMaxBuffer.getDate() + maxBuffer);
 
   return [dateMinBuffer, dateMaxBuffer];
+}
+
+function getBrushDefaultExtent() {
+
+  var defaultRange = 14; //days
+
+  var dateBrushMin = new Date(getDateBuffer()[1] - 12096e5);
+
+  return [dateBrushMin, getDateBuffer()[1]];
 }
 
 // brush handles cribbed from [http://square.github.io/crossfilter/]
