@@ -1,7 +1,7 @@
-data/
-env/
-srv/
-test/
-var/
+/data/
+/env/
+/srv/
+/test/
+/var/
 _ipython/
 .google_api.key
