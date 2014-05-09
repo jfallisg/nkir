@@ -1,7 +1,6 @@
 // configurations
 var margin = {top: 30, right: 30, bottom: 30, left: 30},
     width = 800 - margin.right - margin.left,
-    height = 250 - margin.top - margin.bottom,
     transitionDuration = 800,
     formatDate = d3.time.format("%Y-%m-%d");
 
@@ -57,11 +56,12 @@ function initialize() {
   // variable declarations
 
   // DATE BAR CHART
+  dateBarChart.height = 250 - margin.top - margin.bottom;
   dateBarChart.scaleX = d3.time.scale()
     .domain(getDateBuffer())
     .range([0, width]);
   dateBarChart.scaleY = d3.scale.linear()
-    .range([height, 0]);
+    .range([dateBarChart.height, 0]);
   dateBarChart.scaleColor = d3.scale.linear()
     .range(colorbrewer.BuGn[3]);
 
@@ -78,7 +78,7 @@ function initialize() {
   countryBarChart.scaleX = d3.scale.ordinal()
     .rangeRoundBands([0, width], 0.05);
   countryBarChart.scaleY =  d3.scale.linear()
-    .range([height, 0]);
+    .range([dateBarChart.height, 0]);
   countryBarChart.scaleColor = d3.scale.linear()
     .range(colorbrewer.OrRd[3]);
 
@@ -93,21 +93,22 @@ function initialize() {
     .tickFormat(d3.format("d"));
 
   // COUNTRY MAP
+  countryMap.height = 600 - margin.top - margin.bottom;
   countryMap.projection = d3.geo.mercator()
     .scale(150)
-    .translate([width / 2, height / 2]);
+    .translate([width / 2, countryMap.height / 2]);
 
   countryMap.path = d3.geo.path()
     .projection(countryMap.projection);
 
   // insert stuff on the DOM
 
-  d3.selectAll("#charts .chart-container")
+  // DATE BAR CHART
+   d3.select("#date-chart-container")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom);
+    .attr("height", dateBarChart.height + margin.top + margin.bottom);
 
-  // DATE BAR CHART
   dateBarChart.gHandle = d3.select("#date-chart-container svg")
     .append("g")
     .attr("id", "date-bar-chart")
@@ -125,13 +126,18 @@ function initialize() {
   dateBarChart.gHandle.append("g")
     .attr("class", "axis")
     .attr("id", "date-axis")
-    .attr("transform", "translate(0," + height + ")");
+    .attr("transform", "translate(0," + dateBarChart.height + ")");
 
   dateBarChart.gHandle.append("g")
     .attr("class", "axis")
     .attr("id", "date-count-axis");
 
   // COUNTRY BAR CHART
+   d3.select("#country-chart-container")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", dateBarChart.height + margin.top + margin.bottom);
+
   countryBarChart.gHandle = d3.select("#country-chart-container svg")
     .append("g")
     .attr("id", "country-bar-chart")
@@ -149,13 +155,18 @@ function initialize() {
   countryBarChart.gHandle.append("g")
     .attr("class", "axis")
     .attr("id", "country-axis")
-    .attr("transform", "translate(0," + height + ")");
+    .attr("transform", "translate(0," + dateBarChart.height + ")");
 
   countryBarChart.gHandle.append("g")
     .attr("class", "axis")
     .attr("id", "country-count-axis");
 
   // COUNTRY MAP
+   d3.select("#country-map-container")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", countryMap.height + margin.top + margin.bottom);
+
   countryMap.gHandle = d3.select("#country-map-container svg")
     .append("g")
     .attr("class", "map")
@@ -174,7 +185,7 @@ function initialize() {
   dateBarChart.gHandle.append("rect")
     .attr("class", "grid-background")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", dateBarChart.height);
 
   // draw brush
   brush = d3.svg.brush()
@@ -187,7 +198,7 @@ function initialize() {
     .call(brush);
   gBrush.selectAll("rect")
     .attr("y", -6)
-    .attr("height", height + 7);
+    .attr("height", dateBarChart.height + 7);
   gBrush.selectAll(".resize")
     .append("path")
     .attr("d", resizePath);
@@ -230,7 +241,7 @@ function reDraw() {
       })
       .attr("width", dateBarWidth)
       .attr("height", function(d) {
-        return (height - dateBarChart.scaleY(d.value));
+        return (dateBarChart.height - dateBarChart.scaleY(d.value));
       });
 
   dateBarChart.gHandle.select("#date-axis").transition().duration(transitionDuration).call(dateBarChart.axisX);
@@ -249,7 +260,7 @@ function reDraw() {
       })
       .attr("width", countryBarChart.scaleX.rangeBand())
       .attr("height", function(d) {
-          return (height - countryBarChart.scaleY(d.value));
+          return (dateBarChart.height - countryBarChart.scaleY(d.value));
       })
       .attr("fill", function(d) {
           return countryBarChart.scaleColor(d.value);
@@ -321,7 +332,7 @@ function getBrushDefaultExtent() {
 function resizePath(d) {
   var e = +(d == "e"),
       x = e ? 1 : -1,
-      y = height / 3;
+      y = dateBarChart.height / 3;
   return "M" + (.5 * x) + "," + y
       + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6)
       + "V" + (2 * y - 6)
