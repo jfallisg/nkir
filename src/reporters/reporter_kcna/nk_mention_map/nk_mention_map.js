@@ -79,13 +79,34 @@ function initialize() {
 
   countryMap.scaleColor = d3.scale.linear()
     .range(colorbrewer.OrRd[5]);
-
+/*
   countryMap.projection = d3.geo.stereographic()
     .scale(160)
     .translate([width / 2, countryMap.height / 2])
     .rotate([-126, -40])
     .clipAngle(180 - 1e-4)
     .clipExtent([[0, 0], [width, countryMap.height]])
+    .precision(.1);
+
+  countryMap.projection = d3.geo.naturalEarth()//kavrayskiy7()
+    //.rotate([-126, -40])
+    .rotate([233,0])
+    .scale(145)
+    .translate([width / 2, countryMap.height / 2])
+    .precision(.1);
+*/
+/*
+  countryMap.projection = d3.geo.cylindricalStereographic()
+    .parallel(45)
+    .rotate([233, 0])
+    .scale(145)
+    .translate([width / 2, countryMap.height / 2])
+    .precision(.1);
+*/
+  countryMap.projection = d3.geo.vanDerGrinten()
+    .scale(145)
+    .rotate([233, 0])
+    .translate([width / 2, countryMap.height / 2])
     .precision(.1);
 
   countryMap.path = d3.geo.path()
