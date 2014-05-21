@@ -1,106 +1,45 @@
 # Makefile for NKIR data analysis project
 SHELL := /bin/bash
-KCNAARCHIVE=https://dl.dropboxusercontent.com/s/dhjjwmalmm6fewf/www.kcna.co.jp.tar.gz?dl=1
+PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
-help:
-	@echo 'Makefile for the NKIR data analysis project				'
-	@echo '															'
-	@echo 'Usage:													'
-	@echo 'make install			initial setup after github checkout	'
-	@echo 'make install-dev		initial setup of dev/test tools		'
-	@echo 'make seed_mirror 	populate mirror with an archive		'
-	@echo 'make update			update mirror w/ new articles		'
-	@echo 'make update-dev		update mirror in test environment	'
-	@echo '															'
-
+KCNA-ARCHIVE=https://dl.dropboxusercontent.com/s/dhjjwmalmm6fewf/www.kcna.co.jp.tar.gz?dl=1
 
 # GENERAL MAKE COMMANDS:
 #########################
 
-install: env var data srv
+# make install -> have this install everything to run in production along with dummy data for running in test mode
+install: etc
 
-install-dev: test
+#clean-install:
 
-update: kcna_mirror
+# make update -> run collectors to update production data, make backups
+#update:
 
-update-dev: kcna_mirror_dev
+#clean-update:
 
-rebuild-data: clean udpate
+# make load from backup?
 
-rebuild-test: clean-test dev
+# make test-update (point at test data for all sources, update local test data)
+#test-update:
 
-reinstall: clean-everything install
+# make clean-test-update (wipe out and redo from start)
+#clean-test-update:
 
-clean:
-	rm -rf data
-	rm -rf srv
+#publish:
 
-clean-test:
-	rm -rf test
-
-clean-everything: clean clean-test
-	rm -rf env
-	rm -rf var
-
-backup: archive_mirror
-
-# TOP LEVEL DIRECTORIES:
-#########################
-env:
-	virtualenv env
-	env/bin/pip install -r requirements.txt
-
-var:
-	mkdir -p var/datasets
-	mkdir -p var/logs
-
-data: collector_kcna
-
-srv:
-	mkdir -p srv/api
-	mkdir -p srv/database
-	mkdir -p srv/pelican_site
-	mkdir -p srv/reports
-
-test: dev_mirror_kcna
+#test-publish:
 
 # SPECIFIC MAKE OPERATIONS:
 #########################
-queue:
-	python src/collectors/collector_kcna/queuer_kcna.py
+etc: ./etc/mongodb.config ./etc/nkir.ini
 
-json:
-	python src/collectors/collector_kcna/jsonifier_kcna.py
+./etc/mongodb.config:
+	@mkdir -p $(@D)
+	touch ./etc/mongodb.config
+	# MongoDB needs absolute path specified to database in config files
+	@echo "dbpath=$(PROJECT-ROOT)srv/database" | tee ./etc/mongodb.config
 
-collector_kcna: seed_kcna_mirror
-	mkdir -p data/collector_kcna/inbox_db
-	mkdir -p data/collector_kcna/inbox_json
-	mkdir -p data/collector_kcna/inbox_queuer
+./etc/nkir.ini:
+	@mkdir -p $(@D)
+	touch ./etc/nkir.ini
 
-kcna_mirror:
-	./src/collectors/collector_kcna/mirror_kcna.sh daily
-
-kcna_full_mirror:
-	./src/collectors/collector_kcna/mirror_kcna.sh full
-
-kcna_mirror_dev:
-	./src/collectors/collector_kcna/mirror_kcna.sh -d daily	
-
-seed_kcna_mirror: var/archives/www.kcna.co.jp.tar.gz
-	mkdir -p data/collector_kcna/mirror
-	tar -zxf var/archives/www.kcna.co.jp.tar.gz -C data/collector_kcna/mirror
-
-var/archives/www.kcna.co.jp.tar.gz:
-	mkdir -p $(dir $@)
-	curl -L -o var/archives/www.kcna.co.jp.tar.gz $(KCNAARCHIVE)
-
-archive_mirror:
-	pushd data/collector_kcna/mirror; tar -zcf www.kcna.co.jp.tar.gz www.kcna.co.jp/; popd
-	mkdir -p var/archives
-	mv data/collector_kcna/mirror/www.kcna.co.jp.tar.gz var/archives/www.kcna.co.jp.tar.gz
-
-# TESTING:
-#########################
-dev_mirror_kcna: var/archives/www.kcna.co.jp.tar.gz
-	mkdir -p test/mirror_kcna
-	tar -zxf var/archives/www.kcna.co.jp.tar.gz -C test/mirror_kcna

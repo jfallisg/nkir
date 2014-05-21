@@ -1,40 +1,38 @@
-# NKIR
+# NKODP - The North Korean Open Data Project
 
-*a North Korean International Relations data science and analytics project*
+*a North Korean international relations data science, analytics and visualization project*
 
 ***
 
 ## Requirements
 
-### for production mode
-
-- wget \*
-- git
-- virtualenv (Python with Pip)
-
-### for development mode
-
-- nginx \*
+- [git](http://git-scm.com/)
+- [GNU Make](http://www.gnu.org/software/make/)
+- [virtualenv for Python](http://virtualenv.readthedocs.org/en/latest/) for Python
+- [GNU Wget](https://www.gnu.org/software/wget/) \*
+- [mongoDB](http://www.mongodb.org/)
+- [nginx](http://nginx.org/) \*
 
 *with \* signifying that on Mac OS, required software will have the following prerequisites:*
 
-- xcode command line tools (if on Mac OS)
-- Homebrew
+- [Xcode command line tools](http://railsapps.github.io/xcode-command-line-tools.html)
+- [Homebrew](http://brew.sh/)
 
 ***
 
 ## Installation
 
-### Running on a server (production) or locally (development)
+1. Clone the project's Github repo locally:
 
-1. clone this repo locally
-2. `make install`
-3. `make seed-mirror`
-4. add runs of `make update` to a scheduler like `cron`, daily
+		git clone https://github.com/jfallisg/nkir.git
 
-### Continue if running locally (development)
+2. Run make to install project
 
-5. `make install-dev`
-6. set up `nginx` to serve `http://localhost` with your development site mirror, for example by creating a symbolic link with `sudo ln -s ~/dev/nkir/test/mirror_kcna/www.kcna.co.jp /private/var/www/kcna.co.jp/public_html`.
+		cd NKIR
+		make install
 
-Now you can update your local copy with `make update-dev` to pull from your local version of the site instead.
+3.
+
+***
+
+## Running
