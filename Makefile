@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
-KCNA-ARCHIVE=https://dl.dropboxusercontent.com/s/dhjjwmalmm6fewf/www.kcna.co.jp.tar.gz?dl=1
+COLLECTOR-KCNA-ARCHIVE=https://www.dropbox.com/s/diqb76tphbkssbt/collector_kcna.tar.gz?dl=1
 
 # GENERAL MAKE COMMANDS:
 #########################
@@ -10,29 +10,31 @@ KCNA-ARCHIVE=https://dl.dropboxusercontent.com/s/dhjjwmalmm6fewf/www.kcna.co.jp.
 # make install -> have this install everything to run in production along with dummy data for running in test mode
 install: etc
 
-#clean-install:
+seed-data: ./var/backups/collector_kcna.tar.gz
+	mkdir -p data
+	tar -zxf var/backups/collector_kcna.tar.gz -C data
 
 # make update -> run collectors to update production data, make backups
-#update:
+update: collector-kcna
 
+#clean-install:
 #clean-update:
-
-# make load from backup?
-
 # make test-update (point at test data for all sources, update local test data)
 #test-update:
-
 # make clean-test-update (wipe out and redo from start)
 #clean-test-update:
-
 #publish:
-
 #test-publish:
 
-# SPECIFIC MAKE OPERATIONS:
+# COLLECTIONS OF FILES:
 #########################
+
 etc: ./etc/mongodb.config ./etc/nkir.ini
 
+collector-kcna: mirror-kcna
+
+# SPECIFIC FILES:
+#########################
 ./etc/mongodb.config:
 	@mkdir -p $(@D)
 	touch ./etc/mongodb.config
@@ -43,3 +45,10 @@ etc: ./etc/mongodb.config ./etc/nkir.ini
 	@mkdir -p $(@D)
 	touch ./etc/nkir.ini
 
+./var/backups/collector_kcna.tar.gz:
+	@mkdir -p $(@D)
+	curl -L -o var/backups/collector_kcna.tar.gz $(COLLECTOR-KCNA-ARCHIVE)
+
+# APPLICATION EXECUTIONS:
+mirror-kcna:
+	./src/collectors/collector_kcna/mirror_kcna.sh stuff

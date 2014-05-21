@@ -24,15 +24,43 @@
 
 1. Clone the project's Github repo locally:
 
-		git clone https://github.com/jfallisg/nkir.git
+		cd ~/dev
+		mkdir nkir
+		cd nkir
+		git clone https://github.com/jfallisg/nkir.git .
 
 2. Run make to install project
 
-		cd NKIR
 		make install
 
-3.
+3. (optional) seed data from a backup so you don't have to start data from scratch
+
+		make seed-data
+
+4. *Collectors* are sets of scripts that run as scheduled jobs to repopulate input data. Run manually or add to a schedular like `cron`
+
+		make update
+
+5. *Reporters* are sets of scripts that pull from the NKODP data to create hostable web resources
+
+		make publish
 
 ***
 
 ## Running
+
+### Collector - KCNA
+
+ALL of these scripts are scheduled independently, and run when there's new stuff in their respective "INBOX"'s
+1. mirror_kcna.sh runs, mirroring the KCNA site locally
+	- prereq, can install from a backup
+2. queuer_kcna.py runs, reading git commit logs and copying html
+3. jsonifier_kcna.py runs, creating json docs of each article
+4. dbimporter_kcna.py runs, importing stuff in to mongodb
+
+### Reporter - Map Country Mentions
+
+1. Scheduled: map_countries_kcna.py, which updates resources for vis
+2. Deploy: updated files for vis to srv folder
+	- prereq, can install from a backup
+3. In Dev, you can then run a simple http server locally, or serve with nginx to the internet!
