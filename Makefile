@@ -5,6 +5,24 @@ PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST
 # Specific paths on internet to downloadable assets
 COLLECTOR-KCNA-ARCHIVE=https://www.dropbox.com/s/diqb76tphbkssbt/collector_kcna.tar.gz?dl=1
 
+help:
+	@echo ''
+	@echo 'Makefile for North Korean Open Data Project'
+	@echo ''
+	@echo 'Usage:'
+	@echo 'make install  			- initial setup after github checkout'
+	@echo 'make seed-data			- load data from backup (or else data will generate from scratch)'
+	@echo 'make clean    			- delete all data/configs except ./var/; revert to head of GitHub repo'
+	@echo ''
+	@echo 'make update 			- run collectors to update production data and make backups'
+	@echo 'make publish			- run reporters to process / analyze / visualize data and serve results'
+	@echo ''
+	@echo 'make test-inputs-enabled  	- process all on local test/debug data'
+	@echo 'make test-outputs-enabled 	- serve outputs on local test/debug server'
+	@echo 'make test-inputs-disabled 	- revert inputs back to production mode'
+	@echo 'make test-outputs-disabled	- revert outputs back to production mode'
+	@echo ''
+
 ###########################################################################
 ###########################################################################
 
