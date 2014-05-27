@@ -3,7 +3,7 @@ SHELL := /bin/bash
 PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
 # Specific paths on internet to downloadable assets
-COLLECTOR-KCNA-ARCHIVE=https://www.dropbox.com/s/diqb76tphbkssbt/collector_kcna.tar.gz?dl=1
+SEED-DATA-ARCHIVE=https://www.dropbox.com/s/1j3hz10wpttoir2/seed-data.tar.gz?dl=1
 SEED-TEST-ARCHIVE=https://www.dropbox.com/s/x9j5litr3bjz3g7/seed-test.tar.gz?dl=1
 
 # Ports for testing
@@ -39,9 +39,10 @@ install: env etc seed-test
 
 # If you don't seed-data from an existing backup,all data will be generated
 #  from scratch on first run through.
-seed-data: ./var/assets/collector_kcna.tar.gz
+seed-data: ./var/assets/seed-data.tar.gz
+	rm -rf data
 	mkdir -p data
-	tar -zxf var/assets/collector_kcna.tar.gz -C data
+	tar -zxf var/assets/seed-data.tar.gz -C data
 
 # Runs collectors to update production data and make backups
 update: collectors
@@ -75,7 +76,8 @@ reporters: reporter_kcna
 collector_kcna: queuer_kcna
 
 queuer_kcna: mirror_kcna
-	./src/collectors/collector_kcna/queuer_kcna.py
+	source ./env/bin/activate
+	python ./src/collectors/collector_kcna/queuer_kcna.py
 
 mirror_kcna:
 	./src/collectors/collector_kcna/mirror_kcna.sh full
@@ -114,13 +116,14 @@ etc: ./etc/mongodb.config ./etc/nkir.ini
 
 # seed-data:
 
-./var/assets/collector_kcna.tar.gz:
+./var/assets/seed-data.tar.gz:
 	@mkdir -p $(@D)
-	curl -L -o var/assets/collector_kcna.tar.gz $(COLLECTOR-KCNA-ARCHIVE)
+	curl -L -o var/assets/seed-data.tar.gz $(SEED-DATA-ARCHIVE)
 
 #
 
 seed-test: ./var/assets/seed-test.tar.gz
+	rm -rf test
 	mkdir -p test
 	tar -zxf var/assets/seed-test.tar.gz -C test
 

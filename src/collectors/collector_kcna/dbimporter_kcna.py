@@ -18,7 +18,7 @@ DB_NAME = 'NKODP'
 COLLECTION_NAME = 'KCNA'
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-PROJECT_ROOT_REGEX = re.search("^(.*/nkir).*$", SCRIPT_ROOT)
+PROJECT_ROOT_REGEX = re.search("^(.*)/src/.*$", SCRIPT_ROOT)
 PROJECT_ROOT = PROJECT_ROOT_REGEX.group(1)
 TIME_START = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/dbimporter_kcna_'+TIME_START+'.log')
@@ -31,13 +31,13 @@ def _get_logger():
                         format='%(asctime)s: %(levelname)-8s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-    
+
     # configure console logger
     _console_logger = logging.StreamHandler()
     _console_logger.setLevel(logging.DEBUG) #DEV: Can modify tthis level
     _formatter = logging.Formatter('%(levelname)-8s %(message)s')
     _console_logger.setFormatter(_formatter)
-    
+
     # add the console logger to root (file) logging handler
     _root_logger = logging.getLogger('')
     _root_logger.addHandler(_console_logger)
@@ -85,7 +85,7 @@ def main():
             logger.info("Successfully inserted {} in to {}, with fileid {}.".format(json_filename,DB_NAME,json_file_id))
             if( not os.path.exists(INBOX_DB_ARCHIVE) ):
                 os.makedirs(INBOX_DB_ARCHIVE)
-            
+
             json_file_archive_path = os.path.join(INBOX_DB_ARCHIVE,json_filename)
             try:
                 shutil.move(json_file_path, json_file_archive_path)

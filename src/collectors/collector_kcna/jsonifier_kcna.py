@@ -24,7 +24,7 @@ from bs4 import BeautifulSoup
 import requests
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-PROJECT_ROOT_REGEX = re.search("^(.*/nkir).*$", SCRIPT_ROOT)
+PROJECT_ROOT_REGEX = re.search("^(.*)/src/.*$", SCRIPT_ROOT)
 PROJECT_ROOT = PROJECT_ROOT_REGEX.group(1)
 TIME_START = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/jsonifier_kcna_'+TIME_START+'.log')
@@ -39,13 +39,13 @@ def _get_logger():
                         format='%(asctime)s: %(levelname)-8s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-    
+
     # configure console logger
     _console_logger = logging.StreamHandler()
     _console_logger.setLevel(logging.DEBUG) #DEV: Can modify tthis level
     _formatter = logging.Formatter('%(levelname)-8s %(message)s')
     _console_logger.setFormatter(_formatter)
-    
+
     # add the console logger to root (file) logging handler
     _root_logger = logging.getLogger('')
     _root_logger.addHandler(_console_logger)
@@ -59,7 +59,7 @@ def _pp_date(date):
 def _pp_article(data):
     logger = logging.getLogger('')
     article = data['text']
-    
+
     # slice up first paragraph
     fp = article[0]
     regex = re.search("^(.*),.*\((.*)\) -- (.*)$",fp)
@@ -85,7 +85,7 @@ def _get_link_url(html_filename):
     	(year, month, day) = reg.groups()
     except AttributeError as e:
         logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, html_filename))
-    
+
     URL_FORMAT = [KCNA_URL_ROOT,
                   'item',
                   year,
@@ -129,7 +129,7 @@ def checkEnglish(sentance):
 
 def html_to_json(html_file_path):
     logger = logging.getLogger('')
-    logger.debug("Processing: {}".format(html_file_path))    
+    logger.debug("Processing: {}".format(html_file_path))
 
     # initialize for every article
     payload = {
@@ -242,7 +242,7 @@ def main():
             logger.info("Successfully processed {} in to JSON.".format(html_filename))
             if( not os.path.exists(INBOX_JSON_ARCHIVE) ):
                 os.makedirs(INBOX_JSON_ARCHIVE)
-            
+
             html_file_archive_path = os.path.join(INBOX_JSON_ARCHIVE,html_filename)
             try:
                 shutil.move(html_file_path, html_file_archive_path)

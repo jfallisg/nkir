@@ -15,7 +15,7 @@ from pymongo import MongoClient
 # Singleton of MongoDB connection instead of new connection each country
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-PROJECT_ROOT_REGEX = re.search("^(.*/nkir).*$", SCRIPT_ROOT)
+PROJECT_ROOT_REGEX = re.search("^(.*)/src/.*$", SCRIPT_ROOT)
 PROJECT_ROOT = PROJECT_ROOT_REGEX.group(1)
 TIME_START = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/map_countries_kcna_'+TIME_START+'.log')
