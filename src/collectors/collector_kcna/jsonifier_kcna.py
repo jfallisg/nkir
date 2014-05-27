@@ -42,7 +42,7 @@ def _get_logger():
 
     # configure console logger
     _console_logger = logging.StreamHandler()
-    _console_logger.setLevel(logging.DEBUG) #DEV: Can modify tthis level
+    _console_logger.setLevel(logging.INFO) #DEV: Can modify tthis level
     _formatter = logging.Formatter('%(levelname)-8s %(message)s')
     _console_logger.setFormatter(_formatter)
 
@@ -182,7 +182,7 @@ def html_to_json(html_file_path):
             logger.debug("Moved spanish article {} to JSONIFIER_INBOX's spanish (unprocessed) archive.".format(html_file_path))
         return False
     else:
-        logger.debug("Unable to deduce language of article [{}].".format(html_file_path))
+        logger.info("Unable to deduce language of article [{}].".format(html_file_path))
         return False
 
     # process metadata

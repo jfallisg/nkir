@@ -35,7 +35,7 @@ help:
 #########################
 
 # Installs all config files and sets you up for test environment
-install: env etc seed-test
+install: env etc .google_api.key seed-test
 
 # If you don't seed-data from an existing backup,all data will be generated
 #  from scratch on first run through.
@@ -73,7 +73,11 @@ reporters: reporter_kcna
 
 # COLLECTOR_KCNA:
 #########################
-collector_kcna: queuer_kcna
+collector_kcna: jsonifier_kcna
+
+jsonifier_kcna: queuer_kcna
+	source ./env/bin/activate
+	python ./src/collectors/collector_kcna/jsonifier_kcna.py
 
 queuer_kcna: mirror_kcna
 	source ./env/bin/activate
@@ -111,6 +115,12 @@ etc: ./etc/mongodb.config ./etc/nkir.ini
 ./etc/nkir.ini:
 	@mkdir -p $(@D)
 	touch ./etc/nkir.ini
+
+#
+
+# User needs to manually override contents of this file with actual Google API key
+.google_api.key:
+	touch .google_api.key
 
 #
 

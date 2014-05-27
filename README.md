@@ -33,15 +33,17 @@
 
 		make install
 
-3. (optional) seed data from a backup so you don't have to start data from scratch
+3. MANUALLY enter your Google API key in the file "{YOUR_PROJECT_ROOT/.google_api.key".
+
+4. (optional) seed data from a backup so you don't have to start data from scratch
 
 		make seed-data
 
-4. *Collectors* are sets of scripts that run as scheduled jobs to repopulate input data. Run manually or add to a schedular like `cron`
+5. *Collectors* are sets of scripts that run as scheduled jobs to repopulate input data. Run manually or add to a schedular like `cron`
 
 		make update
 
-5. *Reporters* are sets of scripts that pull from the NKODP data to create hostable web resources
+6. *Reporters* are sets of scripts that pull from the NKODP data to create hostable web resources
 
 		make publish
 
