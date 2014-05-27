@@ -51,7 +51,7 @@ publish: reporters
 
 # Cleans everything but /var, to allow re-generation of data from scratch or backup
 # THIS DELETES /etc/! So if you want to save configs in there, do so manually!
-clean:
+clean: test-inputs-disabled test-outputs-disabled
 	rm -rf data
 	rm -rf env
 	rm -rf etc
@@ -82,7 +82,7 @@ env:
 	env/bin/pip install -r requirements.txt
 
 mirror-kcna:
-	./src/collectors/collector_kcna/mirror_kcna.sh stuff
+	./src/collectors/collector_kcna/mirror_kcna.sh full
 
 seed-test: ./var/assets/seed-test.tar.gz
 	mkdir -p test

@@ -1,44 +1,42 @@
 #!/bin/bash
-# 
+#
 # `mirror_kcna.sh`
-# 
+#
 # A wrapper for `wget` to allow optional configuration of local mirroring of
 # http://www.kcna.co.jp.
-# 
+#
 # INPUTS
 #	- command line arguments
 #	- KCNA news websites, sourced either from:
 #		- http://www.kcna.co.jp
 #		- http://localhost
-# 
+#
 # OUTPUTS
-# 	- Local mirrored copy of KCNA news website
+#	- Local mirrored copy of KCNA news website
 #	- log with downloads strings that can be input to `kcna_queuer.py`
-# 
+#
 # REQUIREMENTS
 #	- wget
 #	- git
-#	- nginx if doing development to run mirror from http://localhost
-# 
+#
 # http://github.com/jfallisg
 # Spring, 2014
 #############################################################################
 
 script_timestamp=$(date +"%Y%m%d_%H%M%S")
 script_root=$(pwd)
-[[ $script_root =~ (^.*nkir).*$ ]]
-project_root=${BASH_REMATCH[1]}
+project_root="$script_root"
 
 ############
 # CONSTANTS & WGET OPTIONS
 ######
 wget=/usr/local/bin/wget	# if on Mac OS, wget installed via Homebrew
-# wget=/ur/bin/wget			# uncomment/override above if on Linux
+# wget=/ur/bin/wget     			# uncomment/override above if on Linux
 
 mirrorpath=$project_root/data/collector_kcna/mirror
 logpath=$project_root/var/logs
 queue_inbox_path=$project_root/data/collector_kcna/inbox_queuer
-test_mirror_path=$project_root/test/mirror_kcna/www.kcna.co.jp
+test_flag_path=$project_root/etc/test-inputs-enabled.flag
 
 DIR_PREFIX="--directory-prefix=${mirrorpath}/www.kcna.co.jp"
 ROBOTS_OFF="--execute robots=off"
@@ -58,7 +56,7 @@ TIMESTAMPING="--timestamping"
 WAIT_DELAY_DEV=""
 WAIT_DELAY_PROD="--wait=0.001 --random-wait"
 #url=""						# see variable declarations
-URL_DEV="http://localhost/index-e.htm"
+URL_DEV="http://localhost:8870/index-e.htm"
 URL_PROD="http://www.kcna.co.jp/index-e.htm"
 #log_file=""				# see variable declarations
 LOG_FILE_VERBOSE="| tee ${logpath}/wget_${script_timestamp}.log"
@@ -73,7 +71,7 @@ LOG_FILE_NON_VERBOSE=""
 ############
 # VARIABLES
 ######
-mode_dev=0		# 0 == production mode
+mode_dev=0    		# 0 == production mode
 mode_verbose=0	# 0 == quiet mode
 mode_mirror=""
 
@@ -93,9 +91,8 @@ log_file=""
 ######
 function print_usage {
 	echo "USAGE:" >&2
-	echo " ./mirror_kcna.sh [-dv] daily|full" >&2
+	echo " ./mirror_kcna.sh [-v] daily|full" >&2
 	echo "OPTIONAL FLAGS:" >&2
-	echo " -d for \"development\", mirror from dev server http://localhost instead of production server http://www.kcna.co.jp" >&2
 	echo " -v for \"verbose\", will log to console as well as to default ./<file>.log file" >&2
 	echo "REQUIRED ARG:" >&2
 	echo " daily | full" >&2
@@ -103,15 +100,12 @@ function print_usage {
 	echo "  specify \"full\" to do a full site recursive mirror." >&2
 	echo "EXAMPLES:" >&2
 	echo " $ ./mirror_kcna.sh daily" >&2
-	echo " $ ./mirror_kcna.sh -dv full" >&2
+	echo " $ ./mirror_kcna.sh -v full" >&2
 }
 
-while getopts ":dv" opt; do
+while getopts ":v" opt; do
 	case $opt in
-		d)
-			mode_dev=1
-			;;
-	    v)
+		v)
 			mode_verbose=1
 			;;
 		\?)
@@ -122,17 +116,17 @@ while getopts ":dv" opt; do
 	esac
 done
 
+# if input test flag is set, we are in "dev" mode, and pull from localhost server
+if [[ -f $test_flag_path ]]; then
+	echo "Found test-inputs-enabled flag: $test_flag_path"
+	mode_dev=1
+fi
+
 shift $((OPTIND-1))		# shift req cmd ln arg in to $@
 if [[ "$@" == "daily" ]] || [[ "$@" == "full" ]]; then
 	mode_mirror=$@
 else
 	 echo "ERROR: choose \"daily\" or \"full\"" >&2; print_usage; exit 2;
-fi
-
-# if we are in dev mode, we need to make sure a kcna mirror is present, otherwise exit.
-if [[ "$mode_dev" == "1" ]] && [[ ! -d "$test_mirror_path" ]]; then
-	echo "ERROR: dev mode specified but you need a sandbox copy of the KCNA mirror.  Try \"make sandbox\"" >&2
-	exit 2
 fi
 
 # if we are mirroring for the first time, and you've specified "daily" instead of "full", we need to override to "full" for this first run.
@@ -159,6 +153,15 @@ if [[ -n "$mode_mirror" ]]; then
 	printf "mirror-mode: $mode_mirror.\n"
 fi
 ############
+
+# Insure all required directories are present
+if [[ ! -d "$mirrorpath" ]]; then
+	mkdir -p $mirrorpath
+fi
+
+if [[ ! -d "$logpath" ]]; then
+	mkdir -p $logpath
+fi
 
 ############
 # BUILD WGET COMMAND LINE STRING
@@ -231,24 +234,28 @@ gitpath=$mirrorpath/www.kcna.co.jp
 if [ ! -x "${gitpath}/.git/" ]; then
 	git --git-dir=${gitpath}/.git init
 fi
-git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} add .
-git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} commit --status -m "incremental update ${script_timestamp}" > $logpath/git_${script_timestamp}.log
-git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} log --name-status --pretty=format: -1 >> $logpath/git_${script_timestamp}.log
 
+# check if anything as changed
+repodirty=$(git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} status -s)
+echo $repodirty
+if [ -n "$repodirty" ]; then
+	echo "Changes to mirror detected -> commiting to git repo..."
+	git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} add .
+	git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} commit --status -m "incremental update ${script_timestamp}" > $logpath/git_${script_timestamp}.log
+	git --git-dir=${gitpath}/.git/ --work-tree=${gitpath} log --name-status --pretty=format: -1 >> $logpath/git_${script_timestamp}.log
+else
+	echo "No changes to mirror detected!"
+fi
 ############
 
 ############
 # copy git logs if they exist to inbox_queuer
 ######
-echo "RIGHT HERE!"
-echo "$logpath/git_${script_timestamp}.log"
-echo "$queue_inbox_path"
-echo "$queue_inbox_path/git_${script_timestamp}.log"
 if [[ -f $logpath/git_${script_timestamp}.log ]]; then
-	echo "up in here!"
 	if [[ ! -d "$queue_inbox_path" ]]; then
 		mkdir -p $queue_inbox_path
 	fi
+	echo "Copying git commit log to queuer inbox..."
 	cp $logpath/git_${script_timestamp}.log $queue_inbox_path/git_${script_timestamp}.log
 fi
 
