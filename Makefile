@@ -62,38 +62,44 @@ clean: test-inputs-disabled test-outputs-disabled
 ###########################################################################
 ###########################################################################
 
+
 # COLLECTIONS OF DATA WORKERS:
 #########################
-collectors: collector-kcna
+collectors: collector_kcna
 
-reporters: reporter-kcna
+reporters: reporter_kcna
 
-# SPECIFIC WORKERS:
+
+# COLLECTOR_KCNA:
 #########################
-collector-kcna: mirror-kcna
+collector_kcna: queuer_kcna
 
-reporter-kcna: map-countries-kcna
+queuer_kcna: mirror_kcna
+	./src/collectors/collector_kcna/queuer_kcna.py
 
-# SCRIPT OR MAKEFILE CALLS:
+mirror_kcna:
+	./src/collectors/collector_kcna/mirror_kcna.sh full
+
+
+# REPORTER_KCNA:
+#########################
+reporter_kcna: map_countries_kcna
+
+
+###########################################################################
+###########################################################################
+
+# INSTALLATION HELPERS:
 #########################
 env:
 	virtualenv env
 	source ./env/bin/activate
 	env/bin/pip install -r requirements.txt
 
-mirror-kcna:
-	./src/collectors/collector_kcna/mirror_kcna.sh full
+#
 
-seed-test: ./var/assets/seed-test.tar.gz
-	mkdir -p test
-	tar -zxf var/assets/seed-test.tar.gz -C test
-
-# COLLECTIONS OF FILES:
-#########################
 etc: ./etc/mongodb.config ./etc/nkir.ini
 
-# SPECIFIC FILES:
-#########################
 ./etc/mongodb.config:
 	@mkdir -p $(@D)
 	touch ./etc/mongodb.config
@@ -104,13 +110,24 @@ etc: ./etc/mongodb.config ./etc/nkir.ini
 	@mkdir -p $(@D)
 	touch ./etc/nkir.ini
 
-./var/assets/seed-test.tar.gz:
-	@mkdir -p $(@D)
-	curl -L -o var/assets/seed-test.tar.gz $(SEED-TEST-ARCHIVE)
+#
+
+# seed-data:
 
 ./var/assets/collector_kcna.tar.gz:
 	@mkdir -p $(@D)
 	curl -L -o var/assets/collector_kcna.tar.gz $(COLLECTOR-KCNA-ARCHIVE)
+
+#
+
+seed-test: ./var/assets/seed-test.tar.gz
+	mkdir -p test
+	tar -zxf var/assets/seed-test.tar.gz -C test
+
+./var/assets/seed-test.tar.gz:
+	@mkdir -p $(@D)
+	curl -L -o var/assets/seed-test.tar.gz $(SEED-TEST-ARCHIVE)
+
 
 # TEST MODES:
 #########################
@@ -125,12 +142,12 @@ test-inputs-enabled:
 	sleep 1; \
 	echo "$$srv_pid" | tee ./etc/srv.pid)
 
+test-inputs-disabled: stop-test-server
+	rm -f ./etc/test-inputs-enabled.flag
+
 stop-test-server:
 	kill -9 `cat ./etc/srv.pid`
 	rm -f ./etc/srv.pid
-
-test-inputs-disabled: stop-test-server
-	rm -f ./etc/test-inputs-enabled.flag
 
 test-outputs-enabled:
 	@mkdir -p etc
