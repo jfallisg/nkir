@@ -6,7 +6,8 @@ PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST
 SEED-DATA-ARCHIVE=https://www.dropbox.com/s/1j3hz10wpttoir2/seed-data.tar.gz?dl=1
 SEED-TEST-ARCHIVE=https://www.dropbox.com/s/x9j5litr3bjz3g7/seed-test.tar.gz?dl=1
 
-# Ports for testing
+# Ports
+MONGO-DB-PORT=28017
 TEST-MIRROR-PORT=8870
 TEST-OUTPUT-PORT=8871
 
@@ -52,10 +53,11 @@ publish: reporters
 
 # Cleans everything but /var, to allow re-generation of data from scratch or backup
 # THIS DELETES /etc/! So if you want to save configs in there, do so manually!
-clean: test-inputs-disabled test-outputs-disabled
+clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
 	rm -rf data
 	rm -rf env
 	rm -rf etc
+	rm -rf srv
 	rm -rf test
 	git reset --hard	# revert any modified file
 	git clean -fd   	# delete unversioned
@@ -73,7 +75,10 @@ reporters: reporter_kcna
 
 # COLLECTOR_KCNA:
 #########################
-collector_kcna: jsonifier_kcna
+collector_kcna: dbimporter_kcna
+
+dbimporter_kcna: jsonifier_kcna start-mongodb-server
+	source ./env/bin/activate; python ./src/collectors/collector_kcna/dbimporter_kcna.py
 
 jsonifier_kcna: queuer_kcna
 	source ./env/bin/activate
@@ -90,7 +95,7 @@ mirror_kcna:
 # REPORTER_KCNA:
 #########################
 reporter_kcna: map_countries_kcna
-
+	@:
 
 ###########################################################################
 ###########################################################################
@@ -104,13 +109,7 @@ env:
 
 #
 
-etc: ./etc/mongodb.config ./etc/nkir.ini
-
-./etc/mongodb.config:
-	@mkdir -p $(@D)
-	touch ./etc/mongodb.config
-	# MongoDB needs absolute path specified to database in config files
-	@echo "dbpath=$(PROJECT-ROOT)srv/database" | tee ./etc/mongodb.config
+etc: ./etc/nkir.ini
 
 ./etc/nkir.ini:
 	@mkdir -p $(@D)
@@ -142,11 +141,25 @@ seed-test: ./var/assets/seed-test.tar.gz
 	curl -L -o var/assets/seed-test.tar.gz $(SEED-TEST-ARCHIVE)
 
 
-# TEST MODES:
+# SERVERS:
 #########################
-test-inputs-enabled:
-	@mkdir -p etc
-	touch ./etc/test-inputs-enabled.flag
+start-mongodb-server: ./srv/database
+	mongod \
+		--port=$(MONGO-DB-PORT) \
+		--logappend \
+		--logpath="$(PROJECT-ROOT)var/logs/mongodb.log" \
+		--dbpath="$(PROJECT-ROOT)srv/database" \
+		--pidfilepath="$(PROJECT-ROOT)etc/mongod.pid" \
+		--fork
+
+./srv/database:
+	mkdir -p srv/database
+
+stop-mongodb-server:
+	kill `cat ./etc/mongod.pid`
+	rm -f ./etc/mongod.pid
+
+start-test-server:
 	source ./env/bin/activate
 	@(pushd test/collector_kcna/mirror/www.kcna.co.jp; \
 	python -m SimpleHTTPServer $(TEST-MIRROR-PORT) & \
@@ -155,14 +168,30 @@ test-inputs-enabled:
 	sleep 1; \
 	echo "$$srv_pid" | tee ./etc/srv.pid)
 
-test-inputs-disabled: stop-test-server
-	rm -f ./etc/test-inputs-enabled.flag
-
 stop-test-server:
 	kill -9 `cat ./etc/srv.pid`
 	rm -f ./etc/srv.pid
 
-test-outputs-enabled:
+
+# TEST MODES:
+#########################
+test-inputs-enabled: ./etc/test-inputs-enabled.flag start-test-server
+	@:
+
+./etc/test-inputs-enabled.flag:
+	@mkdir -p etc
+	touch ./etc/test-inputs-enabled.flag
+
+test-inputs-disabled: stop-test-server
+	rm -f ./etc/test-inputs-enabled.flag
+
+test-mongodb-shell:
+	mongo --shell --port=$(MONGO-DB-PORT)
+
+test-outputs-enabled: ./etc/test-outputs-enabled.flag
+	@:
+
+./etc/test-outputs-enabled.flag:
 	@mkdir -p etc
 	touch ./etc/test-outputs-enabled.flag
 

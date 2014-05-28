@@ -10,7 +10,7 @@
 - [GNU Make](http://www.gnu.org/software/make/)
 - [virtualenv for Python](http://virtualenv.readthedocs.org/en/latest/) for Python
 - [GNU Wget](https://www.gnu.org/software/wget/) \*
-- [mongoDB](http://www.mongodb.org/)
+- [mongoDB](http://www.mongodb.org/) \*
 - [nginx](http://nginx.org/) \*
 
 *with \* signifying that on Mac OS, required software will have the following prerequisites:*

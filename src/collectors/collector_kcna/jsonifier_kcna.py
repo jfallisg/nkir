@@ -167,9 +167,9 @@ def html_to_json(html_file_path):
 
     verdict = checkEnglish(data['metadata']['title'])
     if verdict == 'en':
-        logger.debug("article [{}] is in english.".format(html_file_path))
+        logger.info("article [{}] is in english.".format(html_file_path))
     elif verdict == 'es':
-        logger.debug("article [{}] was in spanish -> not going to process.".format(html_file_path))
+        logger.info("article [{}] was in spanish -> not going to process.".format(html_file_path))
         inbox_json_archive_spanish = os.path.join(INBOX_JSON_ARCHIVE,'spanish')
         if( not os.path.exists(inbox_json_archive_spanish) ):
             os.makedirs(inbox_json_archive_spanish)

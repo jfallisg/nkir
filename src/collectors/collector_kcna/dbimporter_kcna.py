@@ -13,7 +13,7 @@ import sys
 from pymongo import MongoClient
 
 DB_HOST = 'localhost'
-DB_PORT = 27017
+DB_PORT = 28017
 DB_NAME = 'NKODP'
 COLLECTION_NAME = 'KCNA'
 
