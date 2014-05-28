@@ -34,7 +34,7 @@ def _get_logger():
 
     # configure console logger
     _console_logger = logging.StreamHandler()
-    _console_logger.setLevel(logging.DEBUG) #DEV: Can modify tthis level
+    _console_logger.setLevel(logging.INFO) #DEV: Can modify tthis level
     _formatter = logging.Formatter('%(levelname)-8s %(message)s')
     _console_logger.setFormatter(_formatter)
 

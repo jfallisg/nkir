@@ -81,12 +81,10 @@ dbimporter_kcna: jsonifier_kcna start-mongodb-server
 	source ./env/bin/activate; python ./src/collectors/collector_kcna/dbimporter_kcna.py
 
 jsonifier_kcna: queuer_kcna
-	source ./env/bin/activate
-	python ./src/collectors/collector_kcna/jsonifier_kcna.py
+	source ./env/bin/activate; python ./src/collectors/collector_kcna/jsonifier_kcna.py
 
 queuer_kcna: mirror_kcna
-	source ./env/bin/activate
-	python ./src/collectors/collector_kcna/queuer_kcna.py
+	source ./env/bin/activate; python ./src/collectors/collector_kcna/queuer_kcna.py
 
 mirror_kcna:
 	./src/collectors/collector_kcna/mirror_kcna.sh full
@@ -160,13 +158,13 @@ stop-mongodb-server:
 	rm -f ./etc/mongod.pid
 
 start-test-server:
-	source ./env/bin/activate
-	@(pushd test/collector_kcna/mirror/www.kcna.co.jp; \
+	source ./env/bin/activate; \
+	pushd test/collector_kcna/mirror/www.kcna.co.jp; \
 	python -m SimpleHTTPServer $(TEST-MIRROR-PORT) & \
 	srv_pid="$$!"; \
 	popd; \
 	sleep 1; \
-	echo "$$srv_pid" | tee ./etc/srv.pid)
+	echo "$$srv_pid" | tee ./etc/srv.pid
 
 stop-test-server:
 	kill -9 `cat ./etc/srv.pid`
