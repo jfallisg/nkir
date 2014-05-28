@@ -62,6 +62,7 @@ clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
 	git reset --hard	# revert any modified file
 	git clean -fd   	# delete unversioned
 
+.PHONY: install seed-data update publish clean
 ###########################################################################
 ###########################################################################
 
@@ -72,6 +73,7 @@ collectors: collector_kcna
 
 reporters: reporter_kcna
 
+.PHONY: collectors reporters
 
 # COLLECTOR_KCNA:
 #########################
@@ -89,11 +91,14 @@ queuer_kcna: mirror_kcna
 mirror_kcna:
 	./src/collectors/collector_kcna/mirror_kcna.sh full
 
+.PHONY: collector_kcna dbimporter_kcna jsonifier_kcna queuer_kcna mirror_kcna
 
 # REPORTER_KCNA:
 #########################
 reporter_kcna: map_countries_kcna
 	@:
+
+.PHONY: reporter_kcna
 
 ###########################################################################
 ###########################################################################
@@ -138,10 +143,13 @@ seed-test: ./var/assets/seed-test.tar.gz
 	@mkdir -p $(@D)
 	curl -L -o var/assets/seed-test.tar.gz $(SEED-TEST-ARCHIVE)
 
+.PHONY: env etc seed-test
 
 # SERVERS:
 #########################
 start-mongodb-server: ./srv/database
+ifeq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
+	@echo "Starting MongoDB server"
 	mongod \
 		--port=$(MONGO-DB-PORT) \
 		--logappend \
@@ -149,13 +157,16 @@ start-mongodb-server: ./srv/database
 		--dbpath="$(PROJECT-ROOT)srv/database" \
 		--pidfilepath="$(PROJECT-ROOT)etc/mongod.pid" \
 		--fork
+endif
 
 ./srv/database:
 	mkdir -p srv/database
 
 stop-mongodb-server:
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
 	kill `cat ./etc/mongod.pid`
 	rm -f ./etc/mongod.pid
+endif
 
 start-test-server:
 	source ./env/bin/activate; \
@@ -167,9 +178,12 @@ start-test-server:
 	echo "$$srv_pid" | tee ./etc/srv.pid
 
 stop-test-server:
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/srv.pid))
 	kill -9 `cat ./etc/srv.pid`
 	rm -f ./etc/srv.pid
+endif
 
+.PHONY: start-mongodb-server stop-mongodb-server start-test-server stop-test-server
 
 # TEST MODES:
 #########################
@@ -181,7 +195,9 @@ test-inputs-enabled: ./etc/test-inputs-enabled.flag start-test-server
 	touch ./etc/test-inputs-enabled.flag
 
 test-inputs-disabled: stop-test-server
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-inputs-enabled.flag))
 	rm -f ./etc/test-inputs-enabled.flag
+endif
 
 test-mongodb-shell:
 	mongo --shell --port=$(MONGO-DB-PORT)
@@ -194,4 +210,8 @@ test-outputs-enabled: ./etc/test-outputs-enabled.flag
 	touch ./etc/test-outputs-enabled.flag
 
 test-outputs-disabled:
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-outputs-enabled.flag))
 	rm -f ./etc/test-outputs-enabled.flag
+endif
+
+.PHONY: test-inputs-enabled test-inputs-disabled test-mongodb-shell test-outputs-enabled test-outputs-disabled
