@@ -79,7 +79,7 @@ def _get_articles(country_code, alias_list):
 
     # constants
     _DB_HOST = 'localhost'
-    _DB_PORT = 27017
+    _DB_PORT = 28017
     _DB_NAME = 'NKODP'
     _COLLECTION_NAME = 'KCNA'
 

@@ -97,6 +97,16 @@ def main():
             logger.warning("MongoDB insertion error: {} was not successfully inserted.".format(json_file_path))
 
     logger.info("Inserted {} json articles out of {} into MongoDB.".format(processed_articles, total_articles))
+
+    # Ensure that text search index exists now, so that it can process text index in the background
+    coll.ensure_index([
+        ('data.text', 'text'),
+        ('data.metadata.title', 'text'),
+        ('data.metadata.location', 'text'),
+        ('data.metadata.news_service', 'text')],
+        weights={'data.text': 5, 'data.metadata.title': 10, 'data.metadata.location': 10, 'data.metadata.news_service': 1})
+    logger.info("completed ensuring MongoDB text index updated.")
+
     TIME_END = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     logger.info("{} finished at {}.".format(os.path.basename(__file__),TIME_END))
 
