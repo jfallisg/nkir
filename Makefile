@@ -78,6 +78,7 @@ reporters: reporter_kcna
 # COLLECTOR_KCNA:
 #########################
 collector_kcna: dbimporter_kcna
+	@:
 
 dbimporter_kcna: jsonifier_kcna start-mongodb-server
 	source ./env/bin/activate; python ./src/collectors/collector_kcna/dbimporter_kcna.py
@@ -98,7 +99,10 @@ mirror_kcna:
 reporter_kcna: map_countries_kcna
 	@:
 
-.PHONY: reporter_kcna
+map_countries_kcna: start-mongodb-server
+	source ./env/bin/activate; python ./src/reporters/reporter_kcna/map_countries_kcna.py
+
+.PHONY: reporter_kcna map_countries_kcna
 
 ###########################################################################
 ###########################################################################

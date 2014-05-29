@@ -3,6 +3,7 @@
 /etc/
 /srv/
 /test/
-/var/
+/var/*
+!/var/datasets/
 _ipython/
 .google_api.key

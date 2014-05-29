@@ -48,7 +48,7 @@ def _get_logger():
 def _get_countries():
     _country_map = {}
 
-    _COUNTRIES_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/datasets/countries.txt')
+    _COUNTRIES_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/datasets/admin3-country-aliases.txt')
 
     logger = logging.getLogger('')
 
