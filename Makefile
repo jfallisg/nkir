@@ -23,10 +23,13 @@ help:
 	@echo 'make update 			- run collectors to update production data and make backups'
 	@echo 'make publish			- run reporters to process / analyze / visualize data and serve results'
 	@echo ''
-	@echo 'make test-inputs-enabled  	- process all on local test/debug data'
-	@echo 'make test-outputs-enabled 	- serve outputs on local test/debug server'
-	@echo 'make test-inputs-disabled 	- revert inputs back to production mode'
-	@echo 'make test-outputs-disabled	- revert outputs back to production mode'
+	@echo 'make start-test-input-server 	- process all on local test/debug data'
+	@echo 'make start-test-output-server	- serve outputs on local test/debug server'
+	@echo 'make stop-test-input-server  	- revert inputs back to production mode'
+	@echo 'make stop-test-output-server 	- revert outputs back to production mode'
+	@echo 'make start-mongodb-server    	- start MongoDB server'
+	@echo 'make test-mongodb-shell      	- start MongoDB shell attached to our MongoDB server'
+	@echo 'make stop-mongodb-server     	- stop MongoDB server'
 	@echo ''
 
 ###########################################################################
@@ -186,8 +189,9 @@ seed-test: ./var/assets/seed-test.tar.gz
 
 # SERVERS:
 #########################
-start-mongodb-server: ./srv/database
+start-mongodb-server:
 ifeq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
+	mkdir -p srv/database
 	@echo "Starting MongoDB server"
 	mongod \
 		--port=$(MONGO-DB-PORT) \
@@ -198,8 +202,8 @@ ifeq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
 		--fork
 endif
 
-./srv/database:
-	mkdir -p srv/database
+test-mongodb-shell: start-mongodb-server
+	mongo --shell --port=$(MONGO-DB-PORT)
 
 stop-mongodb-server:
 ifneq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
@@ -208,6 +212,7 @@ ifneq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
 endif
 
 start-test-input-server:
+ifeq (,$(wildcard $(PROJECT-ROOT)etc/test-input-server.pid))
 	source ./env/bin/activate; \
 	pushd test/collector_kcna/mirror/www.kcna.co.jp; \
 	python -m SimpleHTTPServer $(TEST-INPUT-PORT) & \
@@ -215,6 +220,7 @@ start-test-input-server:
 	popd; \
 	sleep 1; \
 	echo "$$srv_pid" | tee ./etc/test-input-server.pid
+endif
 
 stop-test-input-server:
 ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-input-server.pid))
@@ -223,6 +229,7 @@ ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-input-server.pid))
 endif
 
 start-test-output-server:
+ifeq (,$(wildcard $(PROJECT-ROOT)etc/test-output-server.pid))
 	mkdir -p srv/public_html
 	source ./env/bin/activate; \
 	pushd srv/public_html; \
@@ -231,6 +238,7 @@ start-test-output-server:
 	popd; \
 	sleep 1; \
 	echo "$$srv_pid" | tee ./etc/test-output-server.pid
+endif
 
 stop-test-output-server:
 ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-output-server.pid))
@@ -238,35 +246,4 @@ ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-output-server.pid))
 	rm -f ./etc/test-output-server.pid
 endif
 
-.PHONY: start-mongodb-server stop-mongodb-server start-test-input-server stop-test-input-server start-test-output-server stop-test-output-server
-
-# TEST MODES:
-#########################
-test-inputs-enabled: ./etc/test-inputs-enabled.flag start-test-input-server
-	@:
-
-./etc/test-inputs-enabled.flag:
-	@mkdir -p etc
-	touch ./etc/test-inputs-enabled.flag
-
-test-inputs-disabled: stop-test-input-server
-ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-inputs-enabled.flag))
-	rm -f ./etc/test-inputs-enabled.flag
-endif
-
-test-mongodb-shell:
-	mongo --shell --port=$(MONGO-DB-PORT)
-
-test-outputs-enabled: ./etc/test-outputs-enabled.flag start-test-output-server
-	@:
-
-./etc/test-outputs-enabled.flag:
-	@mkdir -p etc
-	touch ./etc/test-outputs-enabled.flag
-
-test-outputs-disabled: stop-test-output-server
-ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-outputs-enabled.flag))
-	rm -f ./etc/test-outputs-enabled.flag
-endif
-
-.PHONY: test-inputs-enabled test-inputs-disabled test-mongodb-shell test-outputs-enabled test-outputs-disabled
+.PHONY: start-mongodb-server test-mongodb-shell stop-mongodb-server start-test-input-server stop-test-input-server start-test-output-server stop-test-output-server

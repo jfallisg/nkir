@@ -36,7 +36,7 @@ wget=/usr/local/bin/wget	# if on Mac OS, wget installed via Homebrew
 mirrorpath=$project_root/data/collector_kcna/mirror
 logpath=$project_root/var/logs
 queue_inbox_path=$project_root/data/collector_kcna/inbox_queuer
-test_flag_path=$project_root/etc/test-inputs-enabled.flag
+test_pid_file_path=$project_root/etc/test-input-server.pid
 
 DIR_PREFIX="--directory-prefix=${mirrorpath}/www.kcna.co.jp"
 ROBOTS_OFF="--execute robots=off"
@@ -117,8 +117,8 @@ while getopts ":v" opt; do
 done
 
 # if input test flag is set, we are in "dev" mode, and pull from localhost server
-if [[ -f $test_flag_path ]]; then
-	echo "Found test-inputs-enabled flag: $test_flag_path"
+if [[ -f $test_pid_file_path ]]; then
+	echo "Found test-inputs-enabled flag: $test_pid_file_path"
 	mode_dev=1
 fi
 
