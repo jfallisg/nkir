@@ -8,7 +8,7 @@ SEED-TEST-ARCHIVE=https://www.dropbox.com/s/x9j5litr3bjz3g7/seed-test.tar.gz?dl=
 
 # Ports
 MONGO-DB-PORT=28017
-TEST-MIRROR-PORT=8870
+TEST-INPUT-PORT=8870
 TEST-OUTPUT-PORT=8871
 
 help:
@@ -96,13 +96,48 @@ mirror_kcna:
 
 # REPORTER_KCNA:
 #########################
-reporter_kcna: map_countries_kcna
+reporter_kcna: choropleth-country-mentions-kcna
 	@:
 
+# code for choropleth visualization of country mentions over time from KCNA
+choropleth-country-mentions-kcna: map_countries_kcna ./srv/public_html/nk_mention_map.css ./srv/public_html/nk_mention_map.html ./srv/public_html/nk_mention_map.js ./srv/public_html/topo_countries.json
+	@:
+
+./srv/public_html/nk_mention_map.css:
+	@mkdir -p $(@D)
+	@cp -p ./src/reporters/reporter_kcna/nk_mention_map/nk_mention_map.css ./srv/public_html/nk_mention_map.css
+
+./srv/public_html/nk_mention_map.html:
+	@mkdir -p $(@D)
+	@cp -p ./src/reporters/reporter_kcna/nk_mention_map/nk_mention_map.html ./srv/public_html/nk_mention_map.html
+
+./srv/public_html/nk_mention_map.js: copy-js-libs
+	@mkdir -p $(@D)
+	@cp -p ./src/reporters/reporter_kcna/nk_mention_map/nk_mention_map.js ./srv/public_html/nk_mention_map.js
+
+copy-js-libs:
+	rsync -rupE ./src/reporters/reporter_kcna/nk_mention_map/js/ ./srv/public_html/js/
+
+# generate TopoJSON of country map in ./srv/public_html directory
+./srv/public_html/topo_countries.json: ./data/reporter_kcna/output_topo_countries/topo_countries.json
+	@mkdir -p $(@D)
+	@cp -p ./data/reporter_kcna/output_topo_countries/topo_countries.json ./srv/public_html/topo_countries.json
+
+./data/reporter_kcna/output_topo_countries/topo_countries.json: ./data/reporter_kcna/output_topo_countries/countries.json
+	topojson -p adm0_a3 -o ./data/reporter_kcna/output_topo_countries/topo_countries.json ./data/reporter_kcna/output_topo_countries/countries.json
+
+./data/reporter_kcna/output_topo_countries/countries.json: ./data/reporter_kcna/output_topo_countries/ne_110m_admin_0_countries/ne_110m_admin_0_countries.shp
+	ogr2ogr -f GeoJSON ./data/reporter_kcna/output_topo_countries/countries.json ./data/reporter_kcna/output_topo_countries/ne_110m_admin_0_countries/ne_110m_admin_0_countries.shp
+
+./data/reporter_kcna/output_topo_countries/ne_110m_admin_0_countries/ne_110m_admin_0_countries.shp: ./var/datasets/ne_110m_admin_0_countries.zip
+	@mkdir -p $(@D)
+	unzip -o ./var/datasets/ne_110m_admin_0_countries.zip -d ./data/reporter_kcna/output_topo_countries/ne_110m_admin_0_countries/
+
+# generate prerequisitve country text search results from KCNA
 map_countries_kcna: start-mongodb-server
 	source ./env/bin/activate; python ./src/reporters/reporter_kcna/map_countries_kcna.py
 
-.PHONY: reporter_kcna map_countries_kcna
+.PHONY: reporter_kcna choropleth-country-mentions-kcna copy-js-libs map_countries_kcna
 
 ###########################################################################
 ###########################################################################
@@ -172,33 +207,49 @@ ifneq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
 	rm -f ./etc/mongod.pid
 endif
 
-start-test-server:
+start-test-input-server:
 	source ./env/bin/activate; \
 	pushd test/collector_kcna/mirror/www.kcna.co.jp; \
-	python -m SimpleHTTPServer $(TEST-MIRROR-PORT) & \
+	python -m SimpleHTTPServer $(TEST-INPUT-PORT) & \
 	srv_pid="$$!"; \
 	popd; \
 	sleep 1; \
-	echo "$$srv_pid" | tee ./etc/srv.pid
+	echo "$$srv_pid" | tee ./etc/test-input-server.pid
 
-stop-test-server:
-ifneq (,$(wildcard $(PROJECT-ROOT)etc/srv.pid))
-	kill -9 `cat ./etc/srv.pid`
-	rm -f ./etc/srv.pid
+stop-test-input-server:
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-input-server.pid))
+	kill -9 `cat ./etc/test-input-server.pid`
+	rm -f ./etc/test-input-server.pid
 endif
 
-.PHONY: start-mongodb-server stop-mongodb-server start-test-server stop-test-server
+start-test-output-server:
+	mkdir -p srv/public_html
+	source ./env/bin/activate; \
+	pushd srv/public_html; \
+	python -m SimpleHTTPServer $(TEST-OUTPUT-PORT) & \
+	srv_pid="$$!"; \
+	popd; \
+	sleep 1; \
+	echo "$$srv_pid" | tee ./etc/test-output-server.pid
+
+stop-test-output-server:
+ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-output-server.pid))
+	kill -9 `cat ./etc/test-output-server.pid`
+	rm -f ./etc/test-output-server.pid
+endif
+
+.PHONY: start-mongodb-server stop-mongodb-server start-test-input-server stop-test-input-server start-test-output-server stop-test-output-server
 
 # TEST MODES:
 #########################
-test-inputs-enabled: ./etc/test-inputs-enabled.flag start-test-server
+test-inputs-enabled: ./etc/test-inputs-enabled.flag start-test-input-server
 	@:
 
 ./etc/test-inputs-enabled.flag:
 	@mkdir -p etc
 	touch ./etc/test-inputs-enabled.flag
 
-test-inputs-disabled: stop-test-server
+test-inputs-disabled: stop-test-input-server
 ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-inputs-enabled.flag))
 	rm -f ./etc/test-inputs-enabled.flag
 endif
@@ -206,14 +257,14 @@ endif
 test-mongodb-shell:
 	mongo --shell --port=$(MONGO-DB-PORT)
 
-test-outputs-enabled: ./etc/test-outputs-enabled.flag
+test-outputs-enabled: ./etc/test-outputs-enabled.flag start-test-output-server
 	@:
 
 ./etc/test-outputs-enabled.flag:
 	@mkdir -p etc
 	touch ./etc/test-outputs-enabled.flag
 
-test-outputs-disabled:
+test-outputs-disabled: stop-test-output-server
 ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-outputs-enabled.flag))
 	rm -f ./etc/test-outputs-enabled.flag
 endif

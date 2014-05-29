@@ -15,8 +15,8 @@ var countryMap = {};
 
 // queue all data file loading before proceeding further
 queue()
-  .defer(d3.csv, "data/kcna.csv")
-  .defer(d3.json, "data/topo_countries.json")
+  .defer(d3.csv, "map_countries_kcna.csv")
+  .defer(d3.json, "topo_countries.json")
   .await(ready);
 
 // runs after all dependencies have downloaded
