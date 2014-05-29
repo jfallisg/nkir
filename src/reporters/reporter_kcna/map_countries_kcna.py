@@ -6,6 +6,7 @@ import datetime
 import logging
 import os
 import re
+import shutil
 import sys
 
 from pymongo import MongoClient
@@ -20,6 +21,7 @@ PROJECT_ROOT = PROJECT_ROOT_REGEX.group(1)
 TIME_START = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'var/logs/map_countries_kcna_'+TIME_START+'.log')
 OUTPUT_ROOT = os.path.join(PROJECT_ROOT, 'data/reporter_kcna/output_map_countries_kcna')
+PUBLISH_ROOT = os.path.join(PROJECT_ROOT, 'srv/public_html')
 
 # instantiate a logging object singleton for use throughout script
 def _get_logger():
@@ -31,7 +33,7 @@ def _get_logger():
 
     # configure console logger
     _console_logger = logging.StreamHandler()
-    _console_logger.setLevel(logging.DEBUG) #DEV: Can modify tthis level
+    _console_logger.setLevel(logging.INFO) #DEV: Can modify tthis level
     _formatter = logging.Formatter('%(levelname)-8s %(message)s')
     _console_logger.setFormatter(_formatter)
 
@@ -165,6 +167,8 @@ def _get_output_line(article):
 
 # _output_csv prints out output csv file
 def _output_csv(data, header):
+    logger = logging.getLogger('')
+
     if( not os.path.exists(OUTPUT_ROOT) ):
         os.makedirs(OUTPUT_ROOT)
 
@@ -175,6 +179,19 @@ def _output_csv(data, header):
         for line in sorted(data):
             f.write(line)
             f.write("\n")
+
+    # copy this output file to publishable /srv/public_html location
+    if( not os.path.exists(PUBLISH_ROOT) ):
+        os.makedirs(PUBLISH_ROOT)
+
+    _publish_path = os.path.join(PUBLISH_ROOT, 'map_countries_kcna.csv')
+
+    try:
+        shutil.copy2(_output_path, _publish_path)
+    except IOError as e:
+        logger.warning("I/O error: {} when attempting copy from [{}] to [{}]".format(e.strerror, _output_path, _publish_path))
+    else:
+        logger.info("Copied {} to publishable public_html location.".format(_output_path))
 
     return(0)
 
