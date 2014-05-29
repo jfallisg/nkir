@@ -134,7 +134,7 @@ copy-js-libs:
 	unzip -o ./var/datasets/ne_110m_admin_0_countries.zip -d ./data/reporter_kcna/output_topo_countries/ne_110m_admin_0_countries/
 
 # generate prerequisitve country text search results from KCNA
-map_countries_kcna: start-mongodb-server
+map_countries_kcna: update start-mongodb-server
 	source ./env/bin/activate; python ./src/reporters/reporter_kcna/map_countries_kcna.py
 
 .PHONY: reporter_kcna choropleth-country-mentions-kcna copy-js-libs map_countries_kcna
