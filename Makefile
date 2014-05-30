@@ -25,10 +25,10 @@ help:
 	@echo 'make update 			- run collectors to update production data and make backups'
 	@echo 'make publish			- run reporters to process / analyze / visualize data and serve results'
 	@echo ''
-	@echo 'make backups    	- backup all below'
-	@echo 'make backup-data	- backup /data/ directory to /var/backups/data_<TIMESTAMP>.tar.gz'
-	@echo 'make backup-srv 	- backup /srv/ directory to /var/backups/var_<TIMESTAMP>.tar.gz'
-	@echo 'make backup-logs	- backup /var/logs/ directory to /var/backups/logs_<TIMESTAMP>.tar.gz'
+	@echo 'make backups    		- backup all below'
+	@echo 'make backup-data		- backup /data/ directory to /var/backups/data_<TIMESTAMP>.tar.gz'
+	@echo 'make backup-srv 		- backup /srv/ directory to /var/backups/var_<TIMESTAMP>.tar.gz'
+	@echo 'make backup-logs		- backup /var/logs/ directory to /var/backups/logs_<TIMESTAMP>.tar.gz'
 	@echo ''
 	@echo 'make start-test-input-server 	- process all on local test/debug data'
 	@echo 'make start-test-output-server	- serve outputs on local test/debug server'
@@ -38,7 +38,7 @@ help:
 	@echo 'make test-mongodb-shell      	- start MongoDB shell attached to our MongoDB server'
 	@echo 'make stop-mongodb-server     	- stop MongoDB server'
 	@echo ''
-	@echo 'make test-suite					- runs in order: install, seed-data, start-test-input-server, start-test-output-server, publish'
+	@echo 'make test-suite			- runs in order: install, seed-data, start-test-input-server, start-test-output-server, publish'
 	@echo ''
 
 ###########################################################################
@@ -178,6 +178,7 @@ env:
 #
 
 etc: ./etc/nkir.ini
+	@:
 
 ./etc/nkir.ini:
 	@mkdir -p $(@D)

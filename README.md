@@ -11,7 +11,6 @@
 - [virtualenv for Python](http://virtualenv.readthedocs.org/en/latest/) for Python
 - [GNU Wget](https://www.gnu.org/software/wget/) \*
 - [mongoDB](http://www.mongodb.org/) \*
-- [nginx](http://nginx.org/) \*
 
 *with \* signifying that on Mac OS, required software will have the following prerequisites:*
 
@@ -39,30 +38,42 @@
 
 		make seed-data
 
-5. *Collectors* are sets of scripts that run as scheduled jobs to repopulate input data. Run manually or add to a schedular like `cron`
+5. (if testing inputs) start the test input HTTP server to not scrape target [kcna.co.jp](http://www.kcna.co.jp/index-e.htm) website.
 
-		make update
+		make start-test-input-server
 
-6. *Reporters* are sets of scripts that pull from the NKODP data to create hostable web resources
+6. (if testing outputs) start the test output HTTP server to display visualization locally at [localhost:8871/nk_mention_map.html](http://localhost:8871/nk_mention_map.html).
 
-		make publish
+		make start-test-output-server
 
 ***
 
 ## Running
 
-### Collector - KCNA
+*Collectors* are sets of scripts that run as scheduled jobs to repopulate input data. These are run manually or added to a schedular like `cron`, and invoked with `make update`.
 
-ALL of these scripts are scheduled independently, and run when there's new stuff in their respective "INBOX"'s
-1. mirror_kcna.sh runs, mirroring the KCNA site locally
-	- prereq, can install from a backup
-2. queuer_kcna.py runs, reading git commit logs and copying html
-3. jsonifier_kcna.py runs, creating json docs of each article
-4. dbimporter_kcna.py runs, importing stuff in to mongodb
+*Reporters* are sets of scripts that pull from the NKODP data to create hostable web resources, invoked with `make publish`.
 
-### Reporter - Map Country Mentions
+Currently a run of `make publish` will invoke a run of `make update` to make sure all data is updated and available in the srv/public_html directory.
 
-1. Scheduled: map_countries_kcna.py, which updates resources for vis
-2. Deploy: updated files for vis to srv folder
-	- prereq, can install from a backup
-3. In Dev, you can then run a simple http server locally, or serve with nginx to the internet!
+### Add this to a scheduler on your server, or run it locally:
+
+	make publish
+
+With that simple make command, data processing will occur as in the following:
+
+#### Collector - KCNA
+
+1. mirror_kcna.sh runs, mirroring [kcna.co.jp](http://www.kcna.co.jp/index-e.htm) locally
+
+2. queuer_kcna.py runs, reading git commit logs and queueing html articles that have changed or are new
+
+3. jsonifier_kcna.py runs, creating JSON documents of each article in our MongoDB schema
+
+4. dbimporter_kcna.py runs, importing our queued JSON documents in to our MongoDB database
+
+#### Reporter - Map Country Mentions
+
+1. map_countries_kcna.py runs, which updates our article/country data for our published visualization
+
+2. html/css/js deployment to web server, along with updated data files for our visualization
