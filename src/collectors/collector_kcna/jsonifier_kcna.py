@@ -69,7 +69,7 @@ def _pp_article(data):
 		 data['metadata']['news_service'],
 		 article[0]) = regex.groups()
     except AttributeError as e:
-        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, fp))
+        logger.warning("AttributeError: {} when attempting regex search for article metadata on [{}].".format(e, fp))
 
     # chop off copyright line of article
     article.pop()
@@ -84,7 +84,7 @@ def _get_link_url(html_filename):
     try:
     	(year, month, day) = reg.groups()
     except AttributeError as e:
-        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, html_filename))
+        logger.warning("AttributeError: {} when attempting regex search for year/month/day on [{}].".format(e, html_filename))
 
     URL_FORMAT = [KCNA_URL_ROOT,
                   'item',
@@ -144,13 +144,13 @@ def html_to_json(html_file_path):
     soup = BeautifulSoup(open(html_file_path,'r').read())
 
     html_text = soup.get_text()
-    re_parse = re.compile(ur"^.*>> (.* \d\d\d\d) Juche ([0-9]+)(.*)$",
+    re_parse = re.compile(ur"^.*>>\s?(.* \d\d\d\d) Juche ([0-9]+)(.*)$",
                    re.DOTALL | re.UNICODE)
     parsed = re_parse.search(html_text)
     try:
         (date, juche_year, article) = parsed.groups()
     except AttributeError as e:
-        logger.warning("AttributeError: {} when attempting regex search on [{}].".format(e, html_file_path))
+        logger.warning("AttributeError: {} when attempting regex search for date/juche_year/article on [{}].".format(e, html_file_path))
         return False
 
     article_text = []
