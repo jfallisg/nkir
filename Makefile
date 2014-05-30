@@ -1,6 +1,7 @@
 # Makefile for North Korean Open Data Project
 SHELL := /bin/bash
 PROJECT-ROOT := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+ts := $(shell /bin/date "+%Y%m%d-%H%M%S")
 
 # Specific paths on internet to downloadable assets
 SEED-DATA-ARCHIVE=https://www.dropbox.com/s/1j3hz10wpttoir2/seed-data.tar.gz?dl=1
@@ -22,6 +23,11 @@ help:
 	@echo ''
 	@echo 'make update 			- run collectors to update production data and make backups'
 	@echo 'make publish			- run reporters to process / analyze / visualize data and serve results'
+	@echo ''
+	@echo 'make backups    	- backup all below'
+	@echo 'make backup-data	- backup /data/ directory to /var/backups/data_<TIMESTAMP>.tar.gz'
+	@echo 'make backup-srv 	- backup /srv/ directory to /var/backups/var_<TIMESTAMP>.tar.gz'
+	@echo 'make backup-logs	- backup /var/logs/ directory to /var/backups/logs_<TIMESTAMP>.tar.gz'
 	@echo ''
 	@echo 'make start-test-input-server 	- process all on local test/debug data'
 	@echo 'make start-test-output-server	- serve outputs on local test/debug server'
@@ -54,6 +60,8 @@ update: collectors
 # Runs reporters to process / analyze / visualize data and serve results
 publish: reporters
 
+backups: backup-data backup-srv backup-logs
+
 # Cleans everything but /var, to allow re-generation of data from scratch or backup
 # THIS DELETES /etc/! So if you want to save configs in there, do so manually!
 clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
@@ -65,7 +73,7 @@ clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
 	git reset --hard	# revert any modified file
 	git clean -fd   	# delete unversioned
 
-.PHONY: install seed-data update publish clean
+.PHONY: install seed-data update publish backups clean
 ###########################################################################
 ###########################################################################
 
@@ -247,3 +255,22 @@ ifneq (,$(wildcard $(PROJECT-ROOT)etc/test-output-server.pid))
 endif
 
 .PHONY: start-mongodb-server test-mongodb-shell stop-mongodb-server start-test-input-server stop-test-input-server start-test-output-server stop-test-output-server
+
+# BACKUPS:
+#########################
+backup-data:
+	tar -zcf data_$(ts).tar.gz data/
+	@mkdir -p ./var/backups
+	mv ./data_$(ts).tar.gz ./var/backups/data_$(ts).tar.gz
+
+backup-srv:
+	tar -zcf srv_$(ts).tar.gz srv/
+	@mkdir -p ./var/backups
+	mv ./srv_$(ts).tar.gz ./var/backups/srv_$(ts).tar.gz
+
+backup-logs:
+	pushd ./var/; tar -zcf logs_$(ts).tar.gz logs/; popd
+	@mkdir -p ./var/backups
+	mv ./var/logs_$(ts).tar.gz ./var/backups/logs_$(ts).tar.gz
+
+.PHONY: backup-data backup-srv backup-logs
