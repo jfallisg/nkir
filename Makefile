@@ -116,7 +116,7 @@ queuer_kcna: mirror_kcna
 	source ./env/bin/activate; python ./src/collectors/collector_kcna/queuer_kcna.py
 
 mirror_kcna:
-	./src/collectors/collector_kcna/mirror_kcna.sh full
+	./src/collectors/collector_kcna/mirror_kcna.sh -v full
 
 .PHONY: collector_kcna dbimporter_kcna jsonifier_kcna queuer_kcna mirror_kcna
 

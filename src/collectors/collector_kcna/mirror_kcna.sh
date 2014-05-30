@@ -51,10 +51,11 @@ CONSOLE_LOGGING_NON_VERBOSE="--output-file=${logpath}/wget_${script_timestamp}.l
 RECURSIVE="--recursive"
 #html_only=""				# see variable declarations
 HTML_ONLY_DAILY="--reject mp3,gif"
-HTML_ONLY_FULL=""
+HTML_ONLY_FULL="--reject mp3,gif"
 TIMESTAMPING="--timestamping"
 WAIT_DELAY_DEV=""
-WAIT_DELAY_PROD="--wait=0.001 --random-wait"
+#WAIT_DELAY_PROD="--wait=0.001 --random-wait"
+WAIT_DELAY_PROD="--timeout=10"
 #url=""						# see variable declarations
 URL_DEV="http://localhost:8870/index-e.htm"
 URL_PROD="http://www.kcna.co.jp/index-e.htm"
