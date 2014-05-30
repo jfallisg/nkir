@@ -20,6 +20,7 @@ help:
 	@echo 'make install  			- initial setup after github checkout'
 	@echo 'make seed-data			- load data from backup (or else data will generate from scratch)'
 	@echo 'make clean    			- delete all data/configs except ./var/; revert to head of GitHub repo'
+	@echo 'make clean-all			- clean like above but also delete ./var/'
 	@echo ''
 	@echo 'make update 			- run collectors to update production data and make backups'
 	@echo 'make publish			- run reporters to process / analyze / visualize data and serve results'
@@ -36,6 +37,8 @@ help:
 	@echo 'make start-mongodb-server    	- start MongoDB server'
 	@echo 'make test-mongodb-shell      	- start MongoDB shell attached to our MongoDB server'
 	@echo 'make stop-mongodb-server     	- stop MongoDB server'
+	@echo ''
+	@echo 'make test-suite					- runs in order: install, seed-data, start-test-input-server, start-test-output-server, publish'
 	@echo ''
 
 ###########################################################################
@@ -64,7 +67,7 @@ backups: backup-data backup-srv backup-logs
 
 # Cleans everything but /var, to allow re-generation of data from scratch or backup
 # THIS DELETES /etc/! So if you want to save configs in there, do so manually!
-clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
+clean: stop-test-input-server stop-test-output-server stop-mongodb-server
 	rm -rf data
 	rm -rf env
 	rm -rf etc
@@ -73,7 +76,19 @@ clean: test-inputs-disabled test-outputs-disabled stop-mongodb-server
 	git reset --hard	# revert any modified file
 	git clean -fd   	# delete unversioned
 
-.PHONY: install seed-data update publish backups clean
+clean-all: stop-test-input-server stop-test-output-server stop-mongodb-server
+	rm -rf data
+	rm -rf env
+	rm -rf etc
+	rm -rf srv
+	rm -rf test
+	rm -rf var	# DIFFERENCE with clean
+	git reset --hard
+	git clean -fd
+
+test-suite: install seed-data start-test-input-server start-test-output-server publish
+
+.PHONY: install seed-data update publish backups clean clean-all test-suite
 ###########################################################################
 ###########################################################################
 
