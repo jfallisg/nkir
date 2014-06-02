@@ -119,11 +119,15 @@ def checkEnglish(sentance):
     dict_input = {'key': api_key, 'q': sentance}
     google_data = (requests.get(DETECT_URL, params=dict_input)).json()
 
+    logger.debug(json.dumps(google_data, indent=4, sort_keys=True))
+
     if 'data' in google_data:
         if google_data['data']['detections'][0][0]['language'] == 'en':
             verdict = 'en'
         elif google_data['data']['detections'][0][0]['language'] == 'es':
             verdict = 'es'
+        else:
+            verdict = google_data['data']['detections'][0][0]['language']
 
     return verdict
 
@@ -182,8 +186,7 @@ def html_to_json(html_file_path):
             logger.debug("Moved spanish article {} to JSONIFIER_INBOX's spanish (unprocessed) archive.".format(html_file_path))
         return False
     else:
-        logger.info("Unable to deduce language of article [{}].".format(html_file_path))
-        return False
+        logger.warning("Language of article [{}] is uncertain, possibly [{}].".format(html_file_path, verdict))
 
     # process metadata
     data['metadata']['date_published'] = _pp_date(date)
