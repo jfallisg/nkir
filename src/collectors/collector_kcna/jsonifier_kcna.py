@@ -52,8 +52,31 @@ def _get_logger():
     return _root_logger
 
 def _pp_date(date):
+    logger = logging.getLogger('')
+
     date = date.replace('Juche','').replace('.','').strip()
-    dt = datetime.datetime.strptime(date,"%B %d %Y")
+
+    dt = ''
+    parseSuccess = False
+
+    try:
+        dt = datetime.datetime.strptime(date,"%B %d %Y")
+        parseSuccess = True
+    except ValueError:
+        logger.warning("_pp_date::datetime.datetime.strptime default parse attempt [{}] failed.".format(date))
+
+    if not parseSuccess:
+        regex = re.search("^(\D*)\s?(\d*)\s?(\d\d\d\d).*$", date)
+        try:
+            (month, day, year) = regex.groups()
+            if month == "Februar":
+                newDateString = "February {} {}".format(day, year)
+                dt = datetime.datetime.strptime(newDateString,"%B %d %Y")
+            else:
+                logger.warning("_pp_date:: some other month-string edge-case: {}".format(date))
+        except AttributeError as e:
+            logger.warning("_pp_date:: AttributeError: {} when attempting regex search for month\day\year on [{}].".format(e, date))
+
     return dt.__str__()
 
 def _pp_article(data):
