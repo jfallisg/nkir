@@ -265,7 +265,7 @@ def main():
         # archive html file if we processed ok
         if json_processer_return:
             processed_articles += 1
-            logger.info("Successfully processed {} in to JSON.".format(html_filename))
+            logger.info("Successfully processed {} in to JSON. ({} out of {} articles)".format(html_filename, processed_articles, total_articles))
             if( not os.path.exists(INBOX_JSON_ARCHIVE) ):
                 os.makedirs(INBOX_JSON_ARCHIVE)
 
