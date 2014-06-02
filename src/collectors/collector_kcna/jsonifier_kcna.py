@@ -148,7 +148,7 @@ def html_to_json(html_file_path):
     soup = BeautifulSoup(open(html_file_path,'r').read())
 
     html_text = soup.get_text()
-    re_parse = re.compile(ur"^.*>>\s?(.* \d\d\d\d) Juche ([0-9]+)(.*)$",
+    re_parse = re.compile(ur"^.*>>\s?(.* \d\d\d\d) Juche? ([0-9]+)(.*)$",
                    re.DOTALL | re.UNICODE)
     parsed = re_parse.search(html_text)
     try:
