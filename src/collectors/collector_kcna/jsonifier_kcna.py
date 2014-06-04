@@ -169,6 +169,8 @@ def html_to_json(html_file_path):
 
     # parse HTML
     soup = BeautifulSoup(open(html_file_path,'r').read())
+    #soup = BeautifulSoup(open(html_file_path,'r').read(), text.decode(‘ascii’, ‘ignore’))
+    #soup = BeautifulSoup(open(html_file_path,'r').read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
 
     html_text = soup.get_text()
     re_parse = re.compile(ur"^.*>>\s?(.* \d\d\d\d) Juche? ([0-9]+)(.*)$",
