@@ -26,6 +26,11 @@ INBOX_DB_ROOT = os.path.join(PROJECT_ROOT, 'data/collector_kcna/inbox_db')
 INBOX_DB_ARCHIVE = os.path.join(INBOX_DB_ROOT, 'archive')
 
 def _get_logger():
+    logs_root_dir = re.search("^(.*/logs)/.*$", LOG_FILE_PATH).group(1)
+
+    if( not os.path.exists(logs_root_dir) ):
+        os.makedirs(logs_root_dir)
+
     # init the root logger (which logs to persistent local logfile)
     logging.basicConfig(filename=LOG_FILE_PATH,
                         format='%(asctime)s: %(levelname)-8s: %(message)s',

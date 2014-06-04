@@ -25,6 +25,11 @@ PUBLISH_ROOT = os.path.join(PROJECT_ROOT, 'srv/public_html')
 
 # instantiate a logging object singleton for use throughout script
 def _get_logger():
+    logs_root_dir = re.search("^(.*/logs)/.*$", LOG_FILE_PATH).group(1)
+
+    if( not os.path.exists(logs_root_dir) ):
+        os.makedirs(logs_root_dir)
+
     # init the root logger (which logs to persistent local logfile)
     logging.basicConfig(filename=LOG_FILE_PATH,
                         format='%(asctime)s: %(levelname)-8s: %(message)s',

@@ -34,6 +34,11 @@ INBOX_DB_ROOT = os.path.join(PROJECT_ROOT,'data/collector_kcna/inbox_db')
 GOOGLE_API_KEY = os.path.join(PROJECT_ROOT,'.google_api.key')
 
 def _get_logger():
+    logs_root_dir = re.search("^(.*/logs)/.*$", LOG_FILE_PATH).group(1)
+
+    if( not os.path.exists(logs_root_dir) ):
+        os.makedirs(logs_root_dir)
+
     # init the root logger (which logs to persistent local logfile)
     logging.basicConfig(filename=LOG_FILE_PATH,
                         format='%(asctime)s: %(levelname)-8s: %(message)s',
@@ -169,8 +174,6 @@ def html_to_json(html_file_path):
 
     # parse HTML
     soup = BeautifulSoup(open(html_file_path,'r').read())
-    #soup = BeautifulSoup(open(html_file_path,'r').read(), text.decode(‘ascii’, ‘ignore’))
-    #soup = BeautifulSoup(open(html_file_path,'r').read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
 
     html_text = soup.get_text()
     re_parse = re.compile(ur"^.*>>\s?(.* \d\d\d\d) Juche? ([0-9]+)(.*)$",
