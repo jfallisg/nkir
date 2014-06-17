@@ -156,6 +156,7 @@ def _get_articles(country_code, alias_list):
 
 # _get_output_line returns an output csv string for each article dictionary
 def _get_output_line(article):
+    logger = logging.getLogger('')
 
     _country_REGEX = re.search("^\"(.*)\"$", article["country"])
     _country = _country_REGEX.group(1)
@@ -165,9 +166,12 @@ def _get_output_line(article):
 
     _output_line = ",".join([   _country,
                                 _date_published,
-                                "\"{}\"".format(article["title"]),
-                                article["url"],
+                                "\"{}\"".format(article["title"].encode('utf_16_be')),
+                                "\"{}\"".format(article["url"].encode('utf_16_be')),
                             ])
+
+    logger.debug("output line: {}".format(_output_line))
+
     return _output_line
 
 # _output_csv prints out output csv file

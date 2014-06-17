@@ -216,6 +216,7 @@ seed-test: ./var/assets/seed-test.tar.gz
 start-mongodb-server:
 ifeq (,$(wildcard $(PROJECT-ROOT)etc/mongod.pid))
 	mkdir -p srv/database
+	mkdir -p var/logs
 	@echo "Starting MongoDB server"
 	mongod \
 		--port=$(MONGO-DB-PORT) \
