@@ -11,6 +11,7 @@ var filter = {};
 // global chart objects
 var brush = {};
 var dateBarChart = {};
+var countryBarChart = {};
 var countryMap = {};
 
 // queue all data file loading before proceeding further
@@ -73,6 +74,24 @@ function initialize() {
     .scale(dateBarChart.scaleY)
     .orient("left")
     .ticks(3).tickFormat(d3.format("d"));
+
+// COUNTRY BAR CHART
+  countryBarChart.scaleX = d3.scale.ordinal()
+    .rangeRoundBands([0, width], 0.05);
+  countryBarChart.scaleY =  d3.scale.linear()
+    .range([dateBarChart.height, 0]);
+  countryBarChart.scaleColor = d3.scale.linear()
+    .range(colorbrewer.OrRd[3]);
+
+  countryBarChart.axisX = d3.svg.axis()
+    .scale(countryBarChart.scaleX)
+    .orient("bottom");
+
+  countryBarChart.axisY = d3.svg.axis()
+    .scale(countryBarChart.scaleY)
+    .orient("left")
+    .ticks(9)
+    .tickFormat(d3.format("d"));
 
   // COUNTRY MAP
   countryMap.height = 600 - margin.top - margin.bottom;
@@ -145,6 +164,35 @@ function initialize() {
     .attr("class", "axis")
     .attr("id", "date-count-axis");
 
+  // COUNTRY BAR CHART
+   d3.select("#country-chart-container")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", dateBarChart.height + margin.top + margin.bottom);
+
+  countryBarChart.gHandle = d3.select("#country-chart-container svg")
+    .append("g")
+    .attr("id", "country-bar-chart")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  countryBarChart.gHandle.append("g")
+      .attr("class", "bars")
+      .attr("id", "country-bars")
+    .selectAll("rect")
+      .data(filter.groupByCountry.all())
+      .enter()
+      .append("rect")
+      .attr("class", "country-bar");
+
+  countryBarChart.gHandle.append("g")
+    .attr("class", "axis")
+    .attr("id", "country-axis")
+    .attr("transform", "translate(0," + dateBarChart.height + ")");
+
+  countryBarChart.gHandle.append("g")
+    .attr("class", "axis")
+    .attr("id", "country-count-axis");
+
   // COUNTRY MAP
    d3.select("#country-map-container")
     .append("svg")
@@ -205,6 +253,10 @@ function reapplyFilters() {
 
   var filteredGroupByCountry = filter.groupByCountry.all().filter(function(d) { return d.value > 0; });
 
+  countryBarChart.scaleX.domain(filteredGroupByCountry.map(function(d) { return d.key }).sort(d3.descending));
+  countryBarChart.scaleY.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
+  countryBarChart.scaleColor.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
+
   countryMap.scaleColor.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
 }
 
@@ -233,6 +285,29 @@ function reDraw() {
 
   dateBarChart.gHandle.select("#date-axis").transition().duration(transitionDuration).call(dateBarChart.axisX);
   dateBarChart.gHandle.select("#date-count-axis").transition().duration(transitionDuration).call(dateBarChart.axisY);
+
+ // DRAW COUNTRY BAR GRAPH
+  countryBarChart.gHandle.select("#country-bars")
+    .selectAll("rect")
+      .data(filter.groupByCountry.all().filter(function(d) { return d.value > 0; }))
+    .transition().duration(transitionDuration)
+      .attr("x", function(d, i) {
+          return countryBarChart.scaleX(d.key);
+      })
+      .attr("y", function(d) {
+          return (countryBarChart.scaleY(d.value));
+      })
+      .attr("width", countryBarChart.scaleX.rangeBand())
+      .attr("height", function(d) {
+          return (dateBarChart.height - countryBarChart.scaleY(d.value));
+      })
+      .attr("fill", function(d) {
+          return countryBarChart.scaleColor(d.value);
+      });
+
+  countryBarChart.gHandle.select("#country-axis").transition().duration(transitionDuration).call(countryBarChart.axisX);
+  countryBarChart.gHandle.select("#country-count-axis").transition().duration(transitionDuration).call(countryBarChart.axisY);
+
 
   // DRAW COUNTRY MAP
   countryMap.gHandle.selectAll(".country-poly")
