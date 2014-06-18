@@ -2,10 +2,9 @@
   fill: none;
 }
 
-.title {
+.chart-container h2 {
   font-family: helvetica;
   font-size: 11pt;
-  text-align: center;
   margin-bottom: 5px;
 }
 

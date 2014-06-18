@@ -80,8 +80,8 @@ function initialize() {
     .rangeRoundBands([width, 0], 0.05);
   countryBarChart.scaleY =  d3.scale.log()
     .range([dateBarChart.height, 0]);
-  countryBarChart.scaleColor = d3.scale.linear()
-    .range(colorbrewer.OrRd[3]);
+  countryBarChart.scaleColor = d3.scale.quantize()
+    .range(colorbrewer.OrRd[9]);
 
   countryBarChart.axisX = d3.svg.axis()
     .scale(countryBarChart.scaleX)
@@ -96,8 +96,8 @@ function initialize() {
   // COUNTRY MAP
   countryMap.height = 600 - margin.top - margin.bottom;
 
-  countryMap.scaleColor = d3.scale.linear()
-    .range(colorbrewer.OrRd[5]);
+  countryMap.scaleColor = d3.scale.quantize()
+    .range(colorbrewer.OrRd[9]);
 /*
   countryMap.projection = d3.geo.stereographic()
     .scale(160)
@@ -287,10 +287,28 @@ function reDraw() {
   dateBarChart.gHandle.select("#date-count-axis").transition().duration(transitionDuration).call(dateBarChart.axisY);
 
  // DRAW COUNTRY BAR GRAPH
-  countryBarChart.gHandle.select("#country-bars")
+  var countryBars = countryBarChart.gHandle.select("#country-bars")
     .selectAll("rect")
-      .data(filter.groupByCountry.all().filter(function(d) { return d.value > 0; }))
-    .transition().duration(transitionDuration)
+      .data(filter.groupByCountry.all().filter(function(d) { return d.value > 0; }));
+
+  countryBars.exit().remove();
+
+/*  countryBars.enter()
+    .attr("x", function(d, i) {
+        return countryBarChart.scaleX(d.key);
+    })
+    .attr("y", function(d) {
+        return (countryBarChart.scaleY(d.value));
+    })
+    .attr("width", countryBarChart.scaleX.rangeBand())
+    .attr("height", function(d) {
+        return (dateBarChart.height - countryBarChart.scaleY(d.value));
+    })
+    .attr("fill", function(d) {
+        return countryBarChart.scaleColor(d.value);
+    });*/
+
+  countryBars.transition().duration(transitionDuration)
       .attr("x", function(d, i) {
           return countryBarChart.scaleX(d.key);
       })
@@ -315,7 +333,7 @@ function reDraw() {
       .attr("fill", function(d) { return getCountryValue(d.properties.adm0_a3) });
 
   // TODO: Remove, temporary to rotate North Korea correctly
-  countryMap.gHandle.append("path")
+  /*countryMap.gHandle.append("path")
     .attr("id", "guidelines")
     .attr("d", "M0," + (countryMap.height / 2)
       + "H" + width
@@ -323,7 +341,7 @@ function reDraw() {
       + "V" + (countryMap.height) )
     .attr("stroke", "blue")
     .attr("stroke-width", 1)
-    .attr("fill", "none");
+    .attr("fill", "none");*/
 }
 
 // Snapping behavior from http://bl.ocks.org/mbostock/6232620
