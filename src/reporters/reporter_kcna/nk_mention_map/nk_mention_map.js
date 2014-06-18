@@ -69,7 +69,7 @@ function initialize() {
   dateBarChart.axisX = d3.svg.axis()
     .scale(dateBarChart.scaleX)
     .orient("bottom")
-    .ticks(10).tickFormat(formatDate);
+    .ticks(9).tickFormat(formatDate);
   dateBarChart.axisY = d3.svg.axis()
     .scale(dateBarChart.scaleY)
     .orient("left")
@@ -77,8 +77,8 @@ function initialize() {
 
 // COUNTRY BAR CHART
   countryBarChart.scaleX = d3.scale.ordinal()
-    .rangeRoundBands([0, width], 0.05);
-  countryBarChart.scaleY =  d3.scale.linear()
+    .rangeRoundBands([width, 0], 0.05);
+  countryBarChart.scaleY =  d3.scale.log()
     .range([dateBarChart.height, 0]);
   countryBarChart.scaleColor = d3.scale.linear()
     .range(colorbrewer.OrRd[3]);
@@ -254,7 +254,7 @@ function reapplyFilters() {
   var filteredGroupByCountry = filter.groupByCountry.all().filter(function(d) { return d.value > 0; });
 
   countryBarChart.scaleX.domain(filteredGroupByCountry.map(function(d) { return d.key }).sort(d3.descending));
-  countryBarChart.scaleY.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
+  countryBarChart.scaleY.domain([1,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
   countryBarChart.scaleColor.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
 
   countryMap.scaleColor.domain([0,d3.max(filteredGroupByCountry.map(function(d) { return d.value }))]);
